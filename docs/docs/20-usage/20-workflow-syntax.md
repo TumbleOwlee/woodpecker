@@ -50,7 +50,8 @@ git commit -m "updated README [CI SKIP]"
 
 ## Steps
 
-Every step of your workflow executes commands inside a specified container. The defined commands are executed serially.
+Every step of your workflow executes commands inside a specified container.<br>
+The defined steps are executed in sequence by default, if they should run in parallel you can use [`depends_on`](./20-workflow-syntax.md#depends_on).<br>
 The associated commit is checked out with git to a workspace which is mounted to every step of the workflow as the working directory.
 
 ```diff
@@ -164,13 +165,13 @@ Allows you to specify the entrypoint for containers. Note that this must be a li
 
 Woodpecker provides the ability to pass environment variables to individual steps.
 
-For more details check the [environment docs](./50-environment.md).
+For more details, check the [environment docs](./50-environment.md).
 
 ### `secrets`
 
 Woodpecker provides the ability to store named parameters external to the YAML configuration file, in a central secret store. These secrets can be passed to individual steps of the workflow at runtime.
 
-For more details check the [secrets docs](./40-secrets.md).
+For more details, check the [secrets docs](./40-secrets.md).
 
 ### `failure`
 
@@ -188,7 +189,8 @@ Some of the steps may be allowed to fail without causing the whole workflow and 
 
 ### `when` - Conditional Execution
 
-Woodpecker supports defining a list of conditions for a step by using a `when` block. If at least one of the conditions in the `when` block evaluate to true the step is executed, otherwise it is skipped. A condition can be a check like:
+Woodpecker supports defining a list of conditions for a step by using a `when` block. If at least one of the conditions in the `when` block evaluate to true the step is executed, otherwise it is skipped. A condition is evaluated to true if _all_ subconditions are true.
+A condition can be a check like:
 
 ```diff
  steps:
@@ -202,6 +204,11 @@ Woodpecker supports defining a list of conditions for a step by using a `when` b
 +      - event: push
 +        branch: main
 ```
+
+The `slack` step is executed if one of these conditions is met:
+
+1. The pipeline is executed from a pull request in the repo `test/test`
+2. The pipeline is executed from a push to `maiǹ`
 
 #### `repo`
 
@@ -269,7 +276,7 @@ when:
 
 #### `event`
 
-Available events: `push`, `pull_request`, `pull_request_closed`, `tag`, `deployment`, `cron`, `manual`
+Available events: `push`, `pull_request`, `pull_request_closed`, `tag`, `release`, `deployment`, `cron`, `manual`
 
 Execute a step if the build event is a `tag`:
 
@@ -352,7 +359,11 @@ when:
   - platform: [linux/*, windows/amd64]
 ```
 
+<!-- markdownlint-disable no-duplicate-heading -->
+
 #### `environment`
+
+<!-- markdownlint-enable no-duplicate-heading -->
 
 Execute a step for deployment events matching the target deployment environment:
 
@@ -474,6 +485,19 @@ Normally steps of a workflow are executed serially in the order in which they ar
        - go test
 ```
 
+:::note
+You can define a step to start immediately without dependencies by adding an empty `depends_on: []`. By setting `depends_on` on a single step all other steps will be immediately executed as well if no further dependencies are specified.
+
+```yaml
+steps:
+  - name: check code format
+    image: mstruebing/editorconfig-checker
+    depends_on: [] # enable parallel steps
+  ...
+```
+
+:::
+
 ### `volumes`
 
 Woodpecker gives the ability to define Docker volumes in the YAML. You can use this parameter to mount files or folders on the host machine into your containers.
@@ -556,7 +580,11 @@ git clone https://github.com/octocat/hello-world \
   /go/src/github.com/octocat/hello-world
 ```
 
+<!-- markdownlint-disable no-duplicate-heading -->
+
 ## `matrix`
+
+<!-- markdownlint-enable no-duplicate-heading -->
 
 Woodpecker has integrated support for matrix builds. Woodpecker executes a separate build task for each combination in the matrix, allowing you to build and test a single commit against multiple configurations.
 
@@ -566,10 +594,10 @@ For more details check the [matrix build docs](./30-matrix-workflows.md).
 
 You can set labels for your workflow to select an agent to execute the workflow on. An agent will pick up and run a workflow when **every** label assigned to it matches the agents labels.
 
-To set additional agent labels check the [agent configuration options](../30-administration/15-agent-config.md#woodpecker_filter_labels). Agents will have at least four default labels: `platform=agent-os/agent-arch`, `hostname=my-agent`, `backend=docker` (type of the agent backend) and `repo=*`. Agents can use a `*` as a wildcard for a label. For example `repo=*` will match every repo.
+To set additional agent labels, check the [agent configuration options](../30-administration/15-agent-config.md#woodpecker_filter_labels). Agents will have at least four default labels: `platform=agent-os/agent-arch`, `hostname=my-agent`, `backend=docker` (type of the agent backend) and `repo=*`. Agents can use a `*` as a wildcard for a label. For example `repo=*` will match every repo.
 
 Workflow labels with an empty value will be ignored.
-By default each workflow has at least the `repo=your-user/your-repo-name` label. If you have set the [platform attribute](#platform) for your workflow it will have a label like `platform=your-os/your-arch` as well.
+By default, each workflow has at least the `repo=your-user/your-repo-name` label. If you have set the [platform attribute](#platform) for your workflow it will have a label like `platform=your-os/your-arch` as well.
 
 You can add additional labels as a key value map:
 
@@ -644,7 +672,7 @@ Example configuration to use a custom clone plugin:
 
 ```diff
  clone:
-   git:
+   - name: git
 +    image: octocat/custom-git-plugin
 ```
 
@@ -694,28 +722,9 @@ skip_clone: true
 
 ## `when` - Global workflow conditions
 
-Woodpecker gives the ability to skip whole workflows (not just steps #when---conditional-execution-1) based on certain conditions by a `when` block. If all conditions in the `when` block evaluate to true the workflow is executed, otherwise it is skipped, but treated as successful and other workflows depending on it will still continue.
+Woodpecker gives the ability to skip whole workflows ([not just steps](#when---conditional-execution)) based on certain conditions by a `when` block. If all conditions in the `when` block evaluate to true the workflow is executed, otherwise it is skipped, but treated as successful and other workflows depending on it will still continue.
 
-### `repo`
-
-Example conditional execution by repository:
-
-```diff
-+when:
-+  repo: test/test
-+
- steps:
-   - name: slack
-     image: plugins/slack
-     settings:
-       channel: dev
-```
-
-### `branch`
-
-:::note
-Branch conditions are not applied to tags.
-:::
+For more information about the specific filters, take a look at the [step-specific `when` filters](#when---conditional-execution).
 
 Example conditional execution by branch:
 
@@ -730,121 +739,13 @@ Example conditional execution by branch:
        channel: dev
 ```
 
-The step now triggers on `main`, but also if the target branch of a pull request is `main`. Add an event condition to limit it further to pushes on main only.
+The workflow now triggers on `main`, but also if the target branch of a pull request is `main`.
 
-Execute a step if the branch is `main` or `develop`:
-
-```yaml
-when:
-  branch: [main, develop]
-```
-
-Execute a step if the branch starts with `prefix/*`:
-
-```yaml
-when:
-  branch: prefix/*
-```
-
-Execute a step using custom include and exclude logic:
-
-```yaml
-when:
-  branch:
-    include: [main, release/*]
-    exclude: [release/1.0.0, release/1.1.*]
-```
-
-### `event`
-
-Execute a step if the build event is a `tag`:
-
-```yaml
-when:
-  event: tag
-```
-
-Execute a step if the pipeline event is a `push` to a specified branch:
-
-```diff
- when:
-   event: push
-+  branch: main
-```
-
-Execute a step for all non-pull request events:
-
-```yaml
-when:
-  event: [push, tag, deployment]
-```
-
-Execute a step for all build events:
-
-```yaml
-when:
-  event: [push, pull_request, tag, deployment]
-```
-
-### `ref`
-
-The `ref` filter compares the git reference against which the pipeline is executed.
-This allows you to filter, for example, tags that must start with **v**:
-
-```yaml
-when:
-  event: tag
-  ref: refs/tags/v*
-```
-
-### `environment`
-
-Execute a step for deployment events matching the target deployment environment:
-
-```yaml
-when:
-  environment: production
-  event: deployment
-```
-
-### `instance`
-
-Execute a step only on a certain Woodpecker instance matching the specified hostname:
-
-```yaml
-when:
-  instance: stage.woodpecker.company.com
-```
-
-### `path`
-
-:::info
-Path conditions are applied only to **push** and **pull_request** events.
-It is currently **only available** for GitHub, GitLab and Gitea (version 1.18.0 and newer)
-:::
-
-Execute a step only on a pipeline with certain files being changed:
-
-```yaml
-when:
-  path: 'src/*'
-```
-
-You can use [glob patterns](https://github.com/bmatcuk/doublestar#patterns) to match the changed files and specify if the step should run if a file matching that pattern has been changed `include` or if some files have **not** been changed `exclude`.
-
-```yaml
-when:
-  path:
-    include: ['.woodpecker/*.yaml', '*.ini']
-    exclude: ['*.md', 'docs/**']
-    ignore_message: '[ALL]'
-```
-
-:::info
-Passing a defined ignore-message like `[ALL]` inside the commit message will ignore all path conditions.
-:::
+<!-- markdownlint-disable no-duplicate-heading -->
 
 ## `depends_on`
+
+<!-- markdownlint-enable no-duplicate-heading -->
 
 Woodpecker supports to define multiple workflows for a repository. Those workflows will run independent from each other. To depend them on each other you can use the [`depends_on`](./25-workflows.md#flow-control) keyword.
 

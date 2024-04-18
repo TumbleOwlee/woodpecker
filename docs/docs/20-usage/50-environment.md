@@ -7,9 +7,9 @@ Woodpecker provides the ability to pass environment variables to individual pipe
    - name: build
      image: golang
 +    environment:
-+      - CGO=0
-+      - GOOS=linux
-+      - GOARCH=amd64
++      CGO: 0
++      GOOS: linux
++      GOARCH: amd64
      commands:
        - go build
        - go test
@@ -77,10 +77,11 @@ This is the reference list of all environment variables available to your pipeli
 | `CI_COMMIT_AUTHOR`               | commit author username                                                                                             |
 | `CI_COMMIT_AUTHOR_EMAIL`         | commit author email address                                                                                        |
 | `CI_COMMIT_AUTHOR_AVATAR`        | commit author avatar                                                                                               |
+| `CI_COMMIT_PRERELEASE`           | release is a pre-release (empty if event is not `release`)                                                         |
 |                                  | **Current pipeline**                                                                                               |
 | `CI_PIPELINE_NUMBER`             | pipeline number                                                                                                    |
 | `CI_PIPELINE_PARENT`             | number of parent pipeline                                                                                          |
-| `CI_PIPELINE_EVENT`              | pipeline event (see [pipeline events](../20-usage/15-terminiology/index.md#pipeline-events))                       |
+| `CI_PIPELINE_EVENT`              | pipeline event (see [pipeline events](../20-usage/15-terminology/index.md#pipeline-events))                        |
 | `CI_PIPELINE_URL`                | link to the web UI for the pipeline                                                                                |
 | `CI_PIPELINE_FORGE_URL`          | link to the forge's web UI for the commit(s) or tag that triggered the pipeline                                    |
 | `CI_PIPELINE_DEPLOY_TARGET`      | pipeline deploy target for `deployment` events (i.e. production)                                                   |
@@ -113,7 +114,7 @@ This is the reference list of all environment variables available to your pipeli
 |                                  | **Previous pipeline**                                                                                              |
 | `CI_PREV_PIPELINE_NUMBER`        | previous pipeline number                                                                                           |
 | `CI_PREV_PIPELINE_PARENT`        | previous pipeline number of parent pipeline                                                                        |
-| `CI_PREV_PIPELINE_EVENT`         | previous pipeline event (see [pipeline events](../20-usage/15-terminiology/index.md#pipeline-events))              |
+| `CI_PREV_PIPELINE_EVENT`         | previous pipeline event (see [pipeline events](../20-usage/15-terminology/index.md#pipeline-events))               |
 | `CI_PREV_PIPELINE_URL`           | previous pipeline link in CI                                                                                       |
 | `CI_PREV_PIPELINE_FORGE_URL`     | previous pipeline link to event in forge                                                                           |
 | `CI_PREV_PIPELINE_DEPLOY_TARGET` | previous pipeline deploy target for `deployment` events (ie production)                                            |

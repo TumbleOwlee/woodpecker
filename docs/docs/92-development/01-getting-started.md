@@ -1,12 +1,5 @@
 # Getting started
 
-## Core ideas
-
-- A (e.g. pipeline) configuration should never be [turing complete](https://en.wikipedia.org/wiki/Turing_completeness) (We have agents to exec things 🙂).
-- If possible follow the [KISS principle](https://en.wikipedia.org/wiki/KISS_principle).
-- What is used most should be default.
-- Keep different topics separated, so you can write plugins, port new ideas ... more easily, see [Architecture](./05-architecture.md).
-
 You can develop on your local computer by following the [steps below](#preparation-for-local-development) or you can start with a fully prepared online setup using [Gitpod](https://github.com/gitpod-io/gitpod) and [Gitea](https://github.com/go-gitea/gitea).
 
 ## Gitpod
@@ -89,7 +82,7 @@ WOODPECKER_HEALTHCHECK=false
 
 ### Setup OAuth
 
-Create an OAuth app for your forge as described in the [forges documentation](../30-administration/11-forges/10-overview.md). If you set `WOODPECKER_DEV_OAUTH_HOST=http://localhost:8000` you can use that address with the path as explained for the specific forge to login without the need for a public address. For example for GitHub you would use `http://localhost:8000/authorize` as authorization callback URL.
+Create an OAuth app for your forge as described in the [forges documentation](../30-administration/11-forges/11-overview.md). If you set `WOODPECKER_DEV_OAUTH_HOST=http://localhost:8000` you can use that address with the path as explained for the specific forge to login without the need for a public address. For example for GitHub you would use `http://localhost:8000/authorize` as authorization callback URL.
 
 ## Developing with VS Code
 

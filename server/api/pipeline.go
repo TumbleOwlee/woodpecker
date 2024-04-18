@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 
 	"go.woodpecker-ci.org/woodpecker/v2/server"
 	"go.woodpecker-ci.org/woodpecker/v2/server/model"
@@ -48,10 +49,16 @@ import (
 func CreatePipeline(c *gin.Context) {
 	_store := store.FromContext(c)
 	repo := session.Repo(c)
+	_forge, err := server.Config.Services.Manager.ForgeFromRepo(repo)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot get forge from repo")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 
 	// parse create options
 	var opts model.PipelineOptions
-	err := json.NewDecoder(c.Request.Body).Decode(&opts)
+	err = json.NewDecoder(c.Request.Body).Decode(&opts)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -59,11 +66,11 @@ func CreatePipeline(c *gin.Context) {
 
 	user := session.User(c)
 
-	lastCommit, _ := server.Config.Services.Forge.BranchHead(c, user, repo, opts.Branch)
+	lastCommit, _ := _forge.BranchHead(c, user, repo, opts.Branch)
 
-	tmpBuild := createTmpPipeline(model.EventManual, lastCommit, repo, user, &opts)
+	tmpPipeline := createTmpPipeline(model.EventManual, lastCommit, user, &opts)
 
-	pl, err := pipeline.Create(c, _store, repo, tmpBuild)
+	pl, err := pipeline.Create(c, _store, repo, tmpPipeline)
 	if err != nil {
 		handlePipelineErr(c, err)
 	} else {
@@ -71,10 +78,10 @@ func CreatePipeline(c *gin.Context) {
 	}
 }
 
-func createTmpPipeline(event model.WebhookEvent, commitSHA string, repo *model.Repo, user *model.User, opts *model.PipelineOptions) *model.Pipeline {
+func createTmpPipeline(event model.WebhookEvent, commit *model.Commit, user *model.User, opts *model.PipelineOptions) *model.Pipeline {
 	return &model.Pipeline{
 		Event:     event,
-		Commit:    commitSHA,
+		Commit:    commit.SHA,
 		Branch:    opts.Branch,
 		Timestamp: time.Now().UTC().Unix(),
 
@@ -87,8 +94,7 @@ func createTmpPipeline(event model.WebhookEvent, commitSHA string, repo *model.R
 		Author: user.Login,
 		Email:  user.Email,
 
-		// TODO: Generate proper URL to commit
-		ForgeURL: repo.ForgeURL,
+		ForgeURL: commit.ForgeURL,
 	}
 }
 
@@ -225,6 +231,66 @@ func GetStepLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, logs)
 }
 
+// DeleteStepLogs
+//
+//	@Summary	Deletes step log
+//	@Router		/repos/{repo_id}/logs/{number}/{stepId} [delete]
+//	@Produce	plain
+//	@Success	204
+//	@Tags		Pipeline logs
+//	@Param		Authorization	header	string	true	"Insert your personal access token"	default(Bearer <personal access token>)
+//	@Param		repo_id			path	int		true	"the repository id"
+//	@Param		number			path	int		true	"the number of the pipeline"
+//	@Param		stepId			path	int		true	"the step id"
+func DeleteStepLogs(c *gin.Context) {
+	_store := store.FromContext(c)
+	repo := session.Repo(c)
+
+	pipelineNumber, err := strconv.ParseInt(c.Params.ByName("number"), 10, 64)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_pipeline, err := _store.GetPipelineNumber(repo, pipelineNumber)
+	if err != nil {
+		handleDBError(c, err)
+		return
+	}
+
+	stepID, err := strconv.ParseInt(c.Params.ByName("stepId"), 10, 64)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	_step, err := _store.StepLoad(stepID)
+	if err != nil {
+		handleDBError(c, err)
+		return
+	}
+
+	if _step.PipelineID != _pipeline.ID {
+		// make sure we cannot read arbitrary logs by id
+		_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("step with id %d is not part of repo %s", stepID, repo.FullName))
+		return
+	}
+
+	switch _step.State {
+	case model.StatusRunning, model.StatusPending:
+		c.String(http.StatusUnprocessableEntity, "Cannot delete logs for a pending or running step")
+		return
+	}
+
+	err = _store.LogDelete(_step)
+	if err != nil {
+		handleDBError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // GetPipelineConfig
 //
 //	@Summary	Pipeline configuration
@@ -273,6 +339,13 @@ func CancelPipeline(c *gin.Context) {
 	_store := store.FromContext(c)
 	repo := session.Repo(c)
 	user := session.User(c)
+	_forge, err := server.Config.Services.Manager.ForgeFromRepo(repo)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot get forge from repo")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	num, _ := strconv.ParseInt(c.Params.ByName("number"), 10, 64)
 
 	pl, err := _store.GetPipelineNumber(repo, num)
@@ -281,7 +354,7 @@ func CancelPipeline(c *gin.Context) {
 		return
 	}
 
-	if err := pipeline.Cancel(c, _store, repo, user, pl); err != nil {
+	if err := pipeline.Cancel(c, _forge, _store, repo, user, pl); err != nil {
 		handlePipelineErr(c, err)
 	} else {
 		c.Status(http.StatusNoContent)
@@ -408,16 +481,22 @@ func PostPipeline(c *gin.Context) {
 	refreshUserToken(c, user)
 
 	// make Deploy overridable
-	pl.Deploy = c.DefaultQuery("deploy_to", pl.Deploy)
 
-	// make Event overridable
+	// make Event overridable to deploy
+	// TODO refactor to use own proper API for deploy
 	if event, ok := c.GetQuery("event"); ok {
 		pl.Event = model.WebhookEvent(event)
-
-		if err := model.ValidateWebhookEvent(pl.Event); err != nil {
-			_ = c.AbortWithError(http.StatusBadRequest, err)
+		if pl.Event != model.EventDeploy {
+			_ = c.AbortWithError(http.StatusBadRequest, model.ErrInvalidWebhookEvent)
 			return
 		}
+
+		if !repo.AllowDeploy {
+			_ = c.AbortWithError(http.StatusForbidden, fmt.Errorf("repo does not allow deployments"))
+			return
+		}
+
+		pl.Deploy = c.DefaultQuery("deploy_to", pl.Deploy)
 	}
 
 	// Read query string parameters into pipelineParams, exclude reserved params
@@ -435,13 +514,7 @@ func PostPipeline(c *gin.Context) {
 		}
 	}
 
-	netrc, err := server.Config.Services.Forge.Netrc(user, repo)
-	if err != nil {
-		handlePipelineErr(c, err)
-		return
-	}
-
-	newpipeline, err := pipeline.Restart(c, _store, pl, user, repo, envs, netrc)
+	newpipeline, err := pipeline.Restart(c, _store, pl, user, repo, envs)
 	if err != nil {
 		handlePipelineErr(c, err)
 	} else {
