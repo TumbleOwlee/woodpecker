@@ -17,8 +17,8 @@ package pipeline
 import (
 	"io"
 
-	backend "go.woodpecker-ci.org/woodpecker/v2/pipeline/backend/types"
+	backend "go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/types"
 )
 
 // Logger handles the process logging.
-type Logger func(*backend.Step, io.Reader) error
+type Logger func(*backend.Step, io.ReadCloser) error

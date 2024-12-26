@@ -21,8 +21,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/encryption/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/encryption/types"
 )
 
 type EncryptedSecretStore struct {
@@ -30,7 +30,7 @@ type EncryptedSecretStore struct {
 	encryption types.EncryptionService
 }
 
-// ensure wrapper match interface
+// Ensure wrapper match interface.
 var _ model.SecretStore = new(EncryptedSecretStore)
 
 func NewSecretStore(secretStore model.SecretStore) *EncryptedSecretStore {

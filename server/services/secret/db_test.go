@@ -20,9 +20,9 @@ import (
 	"github.com/franela/goblin"
 	"github.com/stretchr/testify/mock"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/secret"
-	mocks_store "go.woodpecker-ci.org/woodpecker/v2/server/store/mocks"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/secret"
+	mocks_store "go.woodpecker-ci.org/woodpecker/v3/server/store/mocks"
 )
 
 func TestSecretListPipeline(t *testing.T) {
@@ -64,7 +64,7 @@ func TestSecretListPipeline(t *testing.T) {
 				repoSecret,
 			}, nil)
 
-			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{}, &model.ListOptions{})
+			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{})
 			g.Assert(err).IsNil()
 
 			g.Assert(len(s)).Equal(1)
@@ -77,7 +77,7 @@ func TestSecretListPipeline(t *testing.T) {
 				orgSecret,
 			}, nil)
 
-			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{}, &model.ListOptions{})
+			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{})
 			g.Assert(err).IsNil()
 
 			g.Assert(len(s)).Equal(1)
@@ -89,7 +89,7 @@ func TestSecretListPipeline(t *testing.T) {
 				globalSecret,
 			}, nil)
 
-			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{}, &model.ListOptions{})
+			s, err := secret.NewDB(mockStore).SecretListPipeline(&model.Repo{}, &model.Pipeline{})
 			g.Assert(err).IsNil()
 
 			g.Assert(len(s)).Equal(1)

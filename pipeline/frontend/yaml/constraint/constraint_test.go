@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/metadata"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/metadata"
 )
 
 func TestConstraint(t *testing.T) {
@@ -257,6 +257,16 @@ func TestConstraintList(t *testing.T) {
 		// empty commit
 		{
 			conf: "{ include: [ README.md ] }",
+			with: []string{},
+			want: true,
+		},
+		{
+			conf: "{ include: [ README.md ], on_empty: false }",
+			with: []string{},
+			want: false,
+		},
+		{
+			conf: "{ include: [ README.md ], on_empty: true }",
 			with: []string{},
 			want: true,
 		},

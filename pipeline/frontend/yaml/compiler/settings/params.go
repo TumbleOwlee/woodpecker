@@ -42,16 +42,17 @@ func ParamsToEnv(from map[string]any, to map[string]string, prefix string, upper
 	return nil
 }
 
-// format the environment variable key
+// sanitizeParamKey formats the environment variable key.
 func sanitizeParamKey(prefix string, upper bool, k string) string {
-	r := strings.ReplaceAll(strings.ReplaceAll(k, ".", "_"), "-", "_")
+	r := k
 	if upper {
+		r = strings.ReplaceAll(strings.ReplaceAll(k, ".", "_"), "-", "_")
 		r = strings.ToUpper(r)
 	}
 	return prefix + r
 }
 
-// indicate if a data type can be turned into string without encoding as json
+// isComplex indicate if a data type can be turned into string without encoding as json.
 func isComplex(t reflect.Kind) bool {
 	switch t {
 	case reflect.Bool,
@@ -64,7 +65,7 @@ func isComplex(t reflect.Kind) bool {
 	}
 }
 
-// sanitizeParamValue returns the value of a setting as string prepared to be injected as environment variable
+// sanitizeParamValue returns the value of a setting as string prepared to be injected as environment variable.
 func sanitizeParamValue(v any, getSecretValue func(name string) (string, error)) (string, error) {
 	t := reflect.TypeOf(v)
 	vv := reflect.ValueOf(v)
@@ -141,7 +142,7 @@ func sanitizeParamValue(v any, getSecretValue func(name string) (string, error))
 	return handleComplex(vv.Interface(), getSecretValue)
 }
 
-// handleComplex uses yaml2json to get json strings as values for environment variables
+// handleComplex uses yaml2json to get json strings as values for environment variables.
 func handleComplex(v any, getSecretValue func(name string) (string, error)) (string, error) {
 	v, err := injectSecretRecursive(v, getSecretValue)
 	if err != nil {
@@ -161,7 +162,7 @@ func handleComplex(v any, getSecretValue func(name string) (string, error)) (str
 
 // injectSecret probes if a map is a from_secret request.
 // If it's a from_secret request it either  returns the secret value or an error if the secret was not found
-// else it just indicates to progress normally using the provided map as is
+// else it just indicates to progress normally using the provided map as is.
 func injectSecret(v map[string]any, getSecretValue func(name string) (string, error)) (string, bool, error) {
 	if secretNameI, ok := v["from_secret"]; ok {
 		if secretName, ok := secretNameI.(string); ok {
@@ -178,7 +179,7 @@ func injectSecret(v map[string]any, getSecretValue func(name string) (string, er
 }
 
 // injectSecretRecursive iterates over all types and if they contain elements
-// it iterates recursively over them too, using injectSecret internally
+// it iterates recursively over them too, using injectSecret internally.
 func injectSecretRecursive(v any, getSecretValue func(name string) (string, error)) (any, error) {
 	t := reflect.TypeOf(v)
 

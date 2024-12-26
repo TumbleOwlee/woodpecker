@@ -19,15 +19,16 @@ import (
 	"encoding/json"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	prometheus_auto "github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/rpc"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/rpc/proto"
-	"go.woodpecker-ci.org/woodpecker/v2/server/logging"
-	"go.woodpecker-ci.org/woodpecker/v2/server/pubsub"
-	"go.woodpecker-ci.org/woodpecker/v2/server/queue"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
-	"go.woodpecker-ci.org/woodpecker/v2/version"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/rpc"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/rpc/proto"
+	"go.woodpecker-ci.org/woodpecker/v3/server/logging"
+	"go.woodpecker-ci.org/woodpecker/v3/server/pubsub"
+	"go.woodpecker-ci.org/woodpecker/v3/server/queue"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/version"
 )
 
 // WoodpeckerServer is a grpc server implementation.
@@ -37,12 +38,12 @@ type WoodpeckerServer struct {
 }
 
 func NewWoodpeckerServer(queue queue.Queue, logger logging.Log, pubsub *pubsub.Publisher, store store.Store) proto.WoodpeckerServer {
-	pipelineTime := promauto.NewGaugeVec(prometheus.GaugeOpts{
+	pipelineTime := prometheus_auto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "woodpecker",
 		Name:      "pipeline_time",
 		Help:      "Pipeline time.",
 	}, []string{"repo", "branch", "status", "pipeline"})
-	pipelineCount := promauto.NewCounterVec(prometheus.CounterOpts{
+	pipelineCount := prometheus_auto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "woodpecker",
 		Name:      "pipeline_count",
 		Help:      "Pipeline count.",
@@ -85,13 +86,10 @@ func (s *WoodpeckerServer) Next(c context.Context, req *proto.NextRequest) (*pro
 }
 
 func (s *WoodpeckerServer) Init(c context.Context, req *proto.InitRequest) (*proto.Empty, error) {
-	state := rpc.State{
-		Error:    req.GetState().GetError(),
-		ExitCode: int(req.GetState().GetExitCode()),
-		Finished: req.GetState().GetFinished(),
+	state := rpc.WorkflowState{
 		Started:  req.GetState().GetStarted(),
-		StepUUID: req.GetState().GetStepUuid(),
-		Exited:   req.GetState().GetExited(),
+		Finished: req.GetState().GetFinished(),
+		Error:    req.GetState().GetError(),
 	}
 	res := new(proto.Empty)
 	err := s.peer.Init(c, req.GetId(), state)
@@ -99,13 +97,13 @@ func (s *WoodpeckerServer) Init(c context.Context, req *proto.InitRequest) (*pro
 }
 
 func (s *WoodpeckerServer) Update(c context.Context, req *proto.UpdateRequest) (*proto.Empty, error) {
-	state := rpc.State{
+	state := rpc.StepState{
+		StepUUID: req.GetState().GetStepUuid(),
+		Started:  req.GetState().GetStarted(),
+		Finished: req.GetState().GetFinished(),
+		Exited:   req.GetState().GetExited(),
 		Error:    req.GetState().GetError(),
 		ExitCode: int(req.GetState().GetExitCode()),
-		Finished: req.GetState().GetFinished(),
-		Started:  req.GetState().GetStarted(),
-		StepUUID: req.GetState().GetStepUuid(),
-		Exited:   req.GetState().GetExited(),
 	}
 	res := new(proto.Empty)
 	err := s.peer.Update(c, req.GetId(), state)
@@ -113,13 +111,10 @@ func (s *WoodpeckerServer) Update(c context.Context, req *proto.UpdateRequest) (
 }
 
 func (s *WoodpeckerServer) Done(c context.Context, req *proto.DoneRequest) (*proto.Empty, error) {
-	state := rpc.State{
-		Error:    req.GetState().GetError(),
-		ExitCode: int(req.GetState().GetExitCode()),
-		Finished: req.GetState().GetFinished(),
+	state := rpc.WorkflowState{
 		Started:  req.GetState().GetStarted(),
-		StepUUID: req.GetState().GetStepUuid(),
-		Exited:   req.GetState().GetExited(),
+		Finished: req.GetState().GetFinished(),
+		Error:    req.GetState().GetError(),
 	}
 	res := new(proto.Empty)
 	err := s.peer.Done(c, req.GetId(), state)
@@ -139,21 +134,52 @@ func (s *WoodpeckerServer) Extend(c context.Context, req *proto.ExtendRequest) (
 }
 
 func (s *WoodpeckerServer) Log(c context.Context, req *proto.LogRequest) (*proto.Empty, error) {
-	logEntry := &rpc.LogEntry{
-		Data:     req.GetLogEntry().GetData(),
-		Line:     int(req.GetLogEntry().GetLine()),
-		Time:     req.GetLogEntry().GetTime(),
-		StepUUID: req.GetLogEntry().GetStepUuid(),
-		Type:     int(req.GetLogEntry().GetType()),
+	var (
+		entries  []*rpc.LogEntry
+		stepUUID string
+	)
+
+	write := func() error {
+		if len(entries) > 0 {
+			if err := s.peer.Log(c, stepUUID, entries); err != nil {
+				log.Error().Err(err).Msg("could not write log entries")
+				return err
+			}
+		}
+		return nil
 	}
+
+	for _, reqEntry := range req.GetLogEntries() {
+		entry := &rpc.LogEntry{
+			Data:     reqEntry.GetData(),
+			Line:     int(reqEntry.GetLine()),
+			Time:     reqEntry.GetTime(),
+			StepUUID: reqEntry.GetStepUuid(),
+			Type:     int(reqEntry.GetType()),
+		}
+		if entry.StepUUID != stepUUID {
+			_ = write()
+			stepUUID = entry.StepUUID
+			entries = entries[:0]
+		}
+		entries = append(entries, entry)
+	}
+
 	res := new(proto.Empty)
-	err := s.peer.Log(c, logEntry)
+	err := write()
 	return res, err
 }
 
 func (s *WoodpeckerServer) RegisterAgent(c context.Context, req *proto.RegisterAgentRequest) (*proto.RegisterAgentResponse, error) {
 	res := new(proto.RegisterAgentResponse)
-	agentID, err := s.peer.RegisterAgent(c, req.GetPlatform(), req.GetBackend(), req.GetVersion(), req.GetCapacity())
+	agentInfo := req.GetInfo()
+	agentID, err := s.peer.RegisterAgent(c, rpc.AgentInfo{
+		Version:      agentInfo.GetVersion(),
+		Platform:     agentInfo.GetPlatform(),
+		Backend:      agentInfo.GetBackend(),
+		Capacity:     int(agentInfo.GetCapacity()),
+		CustomLabels: agentInfo.GetCustomLabels(),
+	})
 	res.AgentId = agentID
 	return res, err
 }

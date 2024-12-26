@@ -26,13 +26,13 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/bitbucket/internal"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/common"
-	forge_types "go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	shared_utils "go.woodpecker-ci.org/woodpecker/v2/shared/utils"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/bitbucket/internal"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/common"
+	forge_types "go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	shared_utils "go.woodpecker-ci.org/woodpecker/v3/shared/utils"
 )
 
 // Bitbucket cloud endpoints.
@@ -42,7 +42,7 @@ const (
 	pageSize   = 100
 )
 
-// Opts are forge options for bitbucket
+// Opts are forge options for bitbucket.
 type Opts struct {
 	Client string
 	Secret string
@@ -67,12 +67,12 @@ func New(opts *Opts) (forge.Forge, error) {
 	// TODO: add checks
 }
 
-// Name returns the string name of this driver
+// Name returns the string name of this driver.
 func (c *config) Name() string {
 	return "bitbucket"
 }
 
-// URL returns the root url of a configured forge
+// URL returns the root url of a configured forge.
 func (c *config) URL() string {
 	return c.url
 }
@@ -81,16 +81,7 @@ func (c *config) URL() string {
 // Bitbucket account details are returned when the user is successfully authenticated.
 func (c *config) Login(ctx context.Context, req *forge_types.OAuthRequest) (*model.User, string, error) {
 	config := c.newOAuth2Config()
-	redirectURL := config.AuthCodeURL("woodpecker")
-
-	// get the OAuth errors
-	if req.Error != "" {
-		return nil, redirectURL, &forge_types.AuthError{
-			Err:         req.Error,
-			Description: req.ErrorDescription,
-			URI:         req.ErrorURI,
-		}
-	}
+	redirectURL := config.AuthCodeURL(req.State)
 
 	// check the OAuth code
 	if len(req.Code) == 0 {
@@ -126,15 +117,15 @@ func (c *config) Auth(ctx context.Context, token, secret string) (string, error)
 func (c *config) Refresh(ctx context.Context, user *model.User) (bool, error) {
 	config := c.newOAuth2Config()
 	source := config.TokenSource(
-		ctx, &oauth2.Token{RefreshToken: user.Secret})
+		ctx, &oauth2.Token{RefreshToken: user.RefreshToken})
 
 	token, err := source.Token()
 	if err != nil || len(token.AccessToken) == 0 {
 		return false, err
 	}
 
-	user.Token = token.AccessToken
-	user.Secret = token.RefreshToken
+	user.AccessToken = token.AccessToken
+	user.RefreshToken = token.RefreshToken
 	user.Expiry = token.Expiry.UTC().Unix()
 	return true, nil
 }
@@ -152,7 +143,7 @@ func (c *config) Teams(ctx context.Context, u *model.User) ([]*model.Team, error
 			return nil, err
 		}
 		return convertWorkspaceList(resp.Values), nil
-	})
+	}, -1)
 }
 
 // Repo returns the named Bitbucket repository.
@@ -199,18 +190,18 @@ func (c *config) Repos(ctx context.Context, u *model.User) ([]*model.Repo, error
 			return nil, err
 		}
 		return resp.Values, nil
-	})
+	}, -1)
 	if err != nil {
 		return nil, err
 	}
 
-	userPermisions, err := client.ListPermissionsAll()
+	userPermissions, err := client.ListPermissionsAll()
 	if err != nil {
 		return nil, err
 	}
 
 	userPermissionsByRepo := make(map[string]*internal.RepoPerm)
-	for _, permission := range userPermisions {
+	for _, permission := range userPermissions {
 		userPermissionsByRepo[permission.Repo.FullName] = permission
 	}
 
@@ -244,7 +235,7 @@ func (c *config) File(ctx context.Context, u *model.User, r *model.Repo, p *mode
 	return []byte(*config), nil
 }
 
-// Dir fetches a folder from the bitbucket repository
+// Dir fetches a folder from the bitbucket repository.
 func (c *config) Dir(ctx context.Context, u *model.User, r *model.Repo, p *model.Pipeline, f string) ([]*forge_types.FileMeta, error) {
 	var page *string
 	repoPathFiles := []*forge_types.FileMeta{}
@@ -299,11 +290,11 @@ func (c *config) Dir(ctx context.Context, u *model.User, r *model.Repo, p *model
 }
 
 // Status creates a pipeline status for the Bitbucket commit.
-func (c *config) Status(ctx context.Context, user *model.User, repo *model.Repo, pipeline *model.Pipeline, _ *model.Workflow) error {
+func (c *config) Status(ctx context.Context, user *model.User, repo *model.Repo, pipeline *model.Pipeline, workflow *model.Workflow) error {
 	status := internal.PipelineStatus{
 		State: convertStatus(pipeline.Status),
 		Desc:  common.GetPipelineStatusDescription(pipeline.Status),
-		Key:   "Woodpecker",
+		Key:   common.GetPipelineStatusContext(repo, pipeline, workflow),
 		URL:   common.GetPipelineStatusURL(repo, pipeline, nil),
 	}
 	return c.newClient(ctx, user).CreateStatus(repo.Owner, repo.Name, pipeline.Commit, &status)
@@ -313,7 +304,7 @@ func (c *config) Status(ctx context.Context, user *model.User, repo *model.Repo,
 // the Bitbucket repository. Prior to registering hook, previously created hooks
 // are deleted.
 func (c *config) Activate(ctx context.Context, u *model.User, r *model.Repo, link string) error {
-	rawurl, err := url.Parse(link)
+	rawURL, err := url.Parse(link)
 	if err != nil {
 		return err
 	}
@@ -321,8 +312,8 @@ func (c *config) Activate(ctx context.Context, u *model.User, r *model.Repo, lin
 
 	return c.newClient(ctx, u).CreateHook(r.Owner, r.Name, &internal.Hook{
 		Active: true,
-		Desc:   rawurl.Host,
-		Events: []string{"repo:push", "pullrequest:created"},
+		Desc:   rawURL.Host,
+		Events: []string{"repo:push", "pullrequest:created", "pullrequest:updated", "pullrequest:fulfilled", "pullrequest:rejected"},
 		URL:    link,
 	})
 }
@@ -340,7 +331,7 @@ func (c *config) Deactivate(ctx context.Context, u *model.User, r *model.Repo, l
 			return nil, err
 		}
 		return hooks.Values, nil
-	})
+	}, -1)
 	if err != nil {
 		return err
 	}
@@ -357,7 +348,7 @@ func (c *config) Netrc(u *model.User, _ *model.Repo) (*model.Netrc, error) {
 	return &model.Netrc{
 		Machine:  "bitbucket.org",
 		Login:    "x-token-auth",
-		Password: u.Token,
+		Password: u.AccessToken,
 	}, nil
 }
 
@@ -375,7 +366,7 @@ func (c *config) Branches(ctx context.Context, u *model.User, r *model.Repo, p *
 	return branches, nil
 }
 
-// BranchHead returns the sha of the head (latest commit) of the specified branch
+// BranchHead returns the sha of the head (latest commit) of the specified branch.
 func (c *config) BranchHead(ctx context.Context, u *model.User, r *model.Repo, branch string) (*model.Commit, error) {
 	commit, err := c.newClient(ctx, u).GetBranchHead(r.Owner, r.Name, branch)
 	if err != nil {
@@ -432,15 +423,15 @@ func (c *config) Org(ctx context.Context, u *model.User, owner string) (*model.O
 	}, nil
 }
 
-// helper function to return the bitbucket oauth2 client
+// helper function to return the bitbucket oauth2 client.
 func (c *config) newClient(ctx context.Context, u *model.User) *internal.Client {
 	if u == nil {
 		return c.newClientToken(ctx, "", "")
 	}
-	return c.newClientToken(ctx, u.Token, u.Secret)
+	return c.newClientToken(ctx, u.AccessToken, u.RefreshToken)
 }
 
-// helper function to return the bitbucket oauth2 client
+// helper function to return the bitbucket oauth2 client.
 func (c *config) newClientToken(ctx context.Context, token, secret string) *internal.Client {
 	return internal.NewClientToken(
 		ctx,
@@ -454,7 +445,7 @@ func (c *config) newClientToken(ctx context.Context, token, secret string) *inte
 	)
 }
 
-// helper function to return the bitbucket oauth2 config
+// helper function to return the bitbucket oauth2 config.
 func (c *config) newOAuth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     c.Client,
@@ -468,14 +459,14 @@ func (c *config) newOAuth2Config() *oauth2.Config {
 }
 
 // helper function to return matching hooks.
-func matchingHooks(hooks []*internal.Hook, rawurl string) *internal.Hook {
-	link, err := url.Parse(rawurl)
+func matchingHooks(hooks []*internal.Hook, rawURL string) *internal.Hook {
+	link, err := url.Parse(rawURL)
 	if err != nil {
 		return nil
 	}
 	for _, hook := range hooks {
-		hookurl, err := url.Parse(hook.URL)
-		if err == nil && hookurl.Host == link.Host {
+		hookURL, err := url.Parse(hook.URL)
+		if err == nil && hookURL.Host == link.Host {
 			return hook
 		}
 	}

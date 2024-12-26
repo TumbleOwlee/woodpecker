@@ -15,7 +15,7 @@
 package addon
 
 import (
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 type argumentsAuth struct {
@@ -90,7 +90,7 @@ type httpRequest struct {
 	Body   []byte              `json:"body"`
 }
 
-// modelUser is an extension of model.User to marshal all fields to JSON
+// modelUser is an extension of model.User to marshal all fields to JSON.
 type modelUser struct {
 	User *model.User `json:"user"`
 
@@ -111,8 +111,8 @@ type modelUser struct {
 
 func (m *modelUser) asModel() *model.User {
 	m.User.ForgeRemoteID = m.ForgeRemoteID
-	m.User.Token = m.Token
-	m.User.Secret = m.Secret
+	m.User.AccessToken = m.Token
+	m.User.RefreshToken = m.Secret
 	m.User.Expiry = m.Expiry
 	m.User.Hash = m.Hash
 	return m.User
@@ -122,14 +122,14 @@ func modelUserFromModel(u *model.User) *modelUser {
 	return &modelUser{
 		User:          u,
 		ForgeRemoteID: u.ForgeRemoteID,
-		Token:         u.Token,
-		Secret:        u.Secret,
+		Token:         u.AccessToken,
+		Secret:        u.RefreshToken,
 		Expiry:        u.Expiry,
 		Hash:          u.Hash,
 	}
 }
 
-// modelRepo is an extension of model.Repo to marshal all fields to JSON
+// modelRepo is an extension of model.Repo to marshal all fields to JSON.
 type modelRepo struct {
 	Repo   *model.Repo `json:"repo"`
 	UserID int64       `json:"user_id"`

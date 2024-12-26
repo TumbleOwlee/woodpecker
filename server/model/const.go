@@ -50,7 +50,7 @@ func (s WebhookEvent) Validate() error {
 	}
 }
 
-// StatusValue represent pipeline states woodpecker know
+// StatusValue represent pipeline states woodpecker know.
 type StatusValue string //	@name StatusValue
 
 const (
@@ -66,7 +66,18 @@ const (
 	StatusCreated  StatusValue = "created"  // created / internal use only
 )
 
-// SCMKind represent different version control systems
+var ErrInvalidStatusValue = errors.New("invalid status value")
+
+func (s StatusValue) Validate() error {
+	switch s {
+	case StatusSkipped, StatusPending, StatusRunning, StatusSuccess, StatusFailure, StatusKilled, StatusError, StatusBlocked, StatusDeclined, StatusCreated:
+		return nil
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidStatusValue, s)
+	}
+}
+
+// SCMKind represent different version control systems.
 type SCMKind string //	@name SCMKind
 
 const (
@@ -76,7 +87,7 @@ const (
 	RepoPerforce SCMKind = "perforce"
 )
 
-// RepoVisibility represent to what state a repo in woodpecker is visible to others
+// RepoVisibility represent to what state a repo in woodpecker is visible to others.
 type RepoVisibility string //	@name RepoVisibility
 
 const (

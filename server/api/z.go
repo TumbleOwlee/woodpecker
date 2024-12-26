@@ -21,8 +21,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
-	"go.woodpecker-ci.org/woodpecker/v2/version"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/version"
 )
 
 // Health
@@ -48,7 +48,7 @@ func Health(c *gin.Context) {
 //	@Description	Endpoint returns the server version and build information.
 //	@Router			/version [get]
 //	@Produce		json
-//	@Success		200	{object}	string{source=string,version=string}
+//	@Success		200	{object}	object{source=string,version=string}
 //	@Tags			System
 func Version(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
@@ -63,7 +63,7 @@ func Version(c *gin.Context) {
 //	@Description	Endpoint returns the current logging level. Requires admin rights.
 //	@Router			/log-level [get]
 //	@Produce		json
-//	@Success		200	{object}	string{log-level=string}
+//	@Success		200	{object}	object{log-level=string}
 //	@Tags			System
 func LogLevel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
@@ -77,10 +77,10 @@ func LogLevel(c *gin.Context) {
 //	@Description	Endpoint sets the current logging level. Requires admin rights.
 //	@Router			/log-level [post]
 //	@Produce		json
-//	@Success		200	{object}	string{log-level=string}
+//	@Success		200	{object}	object{log-level=string}
 //	@Tags			System
 //	@Param			Authorization	header	string						true	"Insert your personal access token"	default(Bearer <personal access token>)
-//	@Param			log-level		body	string{log-level=string}	true	"the new log level, one of <debug,trace,info,warn,error,fatal,panic,disabled>"
+//	@Param			log-level		body	object{log-level=string}	true	"the new log level, one of <debug,trace,info,warn,error,fatal,panic,disabled>"
 func SetLogLevel(c *gin.Context) {
 	logLevel := struct {
 		LogLevel string `json:"log-level"`

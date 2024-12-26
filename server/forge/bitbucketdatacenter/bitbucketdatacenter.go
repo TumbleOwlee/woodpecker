@@ -25,13 +25,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/bitbucketdatacenter/internal"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/common"
-	forge_types "go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/bitbucketdatacenter/internal"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/common"
+	forge_types "go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
 const listLimit = 250
@@ -43,6 +43,7 @@ type Opts struct {
 	Password     string // Git machine account password.
 	ClientID     string // OAuth 2.0 client id
 	ClientSecret string // OAuth 2.0 client secret
+	OAuthHost    string // OAuth 2.0 host
 }
 
 type client struct {
@@ -50,6 +51,7 @@ type client struct {
 	urlAPI       string
 	clientID     string
 	clientSecret string
+	oauthHost    string
 	username     string
 	password     string
 }
@@ -62,6 +64,7 @@ func New(opts Opts) (forge.Forge, error) {
 		urlAPI:       fmt.Sprintf("%s/rest", opts.URL),
 		clientID:     opts.ClientID,
 		clientSecret: opts.ClientSecret,
+		oauthHost:    opts.OAuthHost,
 		username:     opts.Username,
 		password:     opts.Password,
 	}
@@ -80,12 +83,12 @@ func New(opts Opts) (forge.Forge, error) {
 	return config, nil
 }
 
-// Name returns the string name of this driver
+// Name returns the string name of this driver.
 func (c *client) Name() string {
 	return "bitbucket_dc"
 }
 
-// URL returns the root url of a configured forge
+// URL returns the root url of a configured forge.
 func (c *client) URL() string {
 	return c.url
 }
@@ -93,16 +96,8 @@ func (c *client) URL() string {
 func (c *client) Login(ctx context.Context, req *forge_types.OAuthRequest) (*model.User, string, error) {
 	config := c.newOAuth2Config()
 
-	// TODO: Add proper state and pkce...
-	redirectURL := config.AuthCodeURL("woodpecker")
-
-	if req.Error != "" {
-		return nil, redirectURL, &forge_types.AuthError{
-			Err:         req.Error,
-			Description: req.ErrorDescription,
-			URI:         req.ErrorURI,
-		}
-	}
+	// TODO: Use pkce flow (https://oauth.net/2/pkce/) ...
+	redirectURL := config.AuthCodeURL(req.State)
 
 	if len(req.Code) == 0 {
 		return nil, redirectURL, nil
@@ -121,7 +116,7 @@ func (c *client) Login(ctx context.Context, req *forge_types.OAuthRequest) (*mod
 		return nil, "", err
 	}
 
-	bc, err := c.newClient(ctx, &model.User{Token: token.AccessToken})
+	bc, err := c.newClient(ctx, &model.User{AccessToken: token.AccessToken})
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create bitbucket client: %w", err)
 	}
@@ -148,7 +143,7 @@ func (c *client) Auth(ctx context.Context, accessToken, _ string) (string, error
 func (c *client) Refresh(ctx context.Context, u *model.User) (bool, error) {
 	config := c.newOAuth2Config()
 	t := &oauth2.Token{
-		RefreshToken: u.Secret,
+		RefreshToken: u.RefreshToken,
 	}
 	ts := config.TokenSource(ctx, t)
 
@@ -216,7 +211,7 @@ func (c *client) Repos(ctx context.Context, u *model.User) ([]*model.Repo, error
 	}
 
 	opts := &bb.RepositorySearchOptions{Permission: bb.PermissionRepoWrite, ListOptions: bb.ListOptions{Limit: listLimit}}
-	var all []*model.Repo
+	all := make([]*model.Repo, 0)
 	for {
 		repos, resp, err := bc.Projects.SearchRepositories(ctx, opts)
 		if err != nil {
@@ -262,8 +257,14 @@ func (c *client) File(ctx context.Context, u *model.User, r *model.Repo, p *mode
 		return nil, fmt.Errorf("unable to create bitbucket client: %w", err)
 	}
 
-	b, _, err := bc.Projects.GetTextFileContent(ctx, r.Owner, r.Name, f, p.Commit)
+	b, resp, err := bc.Projects.GetTextFileContent(ctx, r.Owner, r.Name, f, p.Commit)
 	if err != nil {
+		if resp.StatusCode == http.StatusNotFound {
+			// requested directory might not exist
+			return nil, &forge_types.ErrConfigNotFound{
+				Configs: []string{f},
+			}
+		}
 		return nil, err
 	}
 	return b, nil
@@ -276,22 +277,25 @@ func (c *client) Dir(ctx context.Context, u *model.User, r *model.Repo, p *model
 	}
 
 	opts := &bb.FilesListOptions{At: p.Commit}
-	var all []*forge_types.FileMeta
+	all := make([]*forge_types.FileMeta, 0)
 	for {
 		list, resp, err := bc.Projects.ListFiles(ctx, r.Owner, r.Name, path, opts)
 		if err != nil {
 			if resp.StatusCode == http.StatusNotFound {
-				break // requested directory might not exist
+				// requested directory might not exist
+				return nil, &forge_types.ErrConfigNotFound{
+					Configs: []string{path},
+				}
 			}
 			return nil, err
 		}
 		for _, f := range list {
-			fullpath := fmt.Sprintf("%s/%s", path, f)
-			data, err := c.File(ctx, u, r, p, fullpath)
+			fullPath := fmt.Sprintf("%s/%s", path, f)
+			data, err := c.File(ctx, u, r, p, fullPath)
 			if err != nil {
 				return nil, err
 			}
-			all = append(all, &forge_types.FileMeta{Name: fullpath, Data: data})
+			all = append(all, &forge_types.FileMeta{Name: fullPath, Data: data})
 		}
 		if resp.LastPage {
 			break
@@ -337,7 +341,7 @@ func (c *client) Branches(ctx context.Context, u *model.User, r *model.Repo, p *
 	}
 
 	opts := &bb.BranchSearchOptions{ListOptions: convertListOptions(p)}
-	var all []string
+	all := make([]string, 0)
 	for {
 		branches, resp, err := bc.Projects.SearchBranches(ctx, r.Owner, r.Name, opts)
 		if err != nil {
@@ -385,7 +389,7 @@ func (c *client) PullRequests(ctx context.Context, u *model.User, r *model.Repo,
 	}
 
 	opts := &bb.PullRequestSearchOptions{ListOptions: convertListOptions(p)}
-	var all []*model.PullRequest
+	all := make([]*model.PullRequest, 0)
 	for {
 		prs, resp, err := bc.Projects.SearchPullRequests(ctx, r.Owner, r.Name, opts)
 		if err != nil {
@@ -411,7 +415,7 @@ func (c *client) Activate(ctx context.Context, u *model.User, r *model.Repo, lin
 
 	err = c.Deactivate(ctx, u, r, link)
 	if err != nil {
-		return fmt.Errorf("unable to deactive old webhooks: %w", err)
+		return fmt.Errorf("unable to deactivate old webhooks: %w", err)
 	}
 
 	webhook := &bb.Webhook{
@@ -599,11 +603,16 @@ func (c *client) Org(_ context.Context, _ *model.User, owner string) (*model.Org
 }
 
 func (c *client) newOAuth2Config() *oauth2.Config {
+	publicOAuthURL := c.oauthHost
+	if publicOAuthURL == "" {
+		publicOAuthURL = c.urlAPI
+	}
+
 	return &oauth2.Config{
 		ClientID:     c.clientID,
 		ClientSecret: c.clientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  fmt.Sprintf("%s/oauth2/latest/authorize", c.urlAPI),
+			AuthURL:  fmt.Sprintf("%s/oauth2/latest/authorize", publicOAuthURL),
 			TokenURL: fmt.Sprintf("%s/oauth2/latest/token", c.urlAPI),
 		},
 		Scopes:      []string{string(bb.PermissionRepoRead), string(bb.PermissionRepoWrite), string(bb.PermissionRepoAdmin)},
@@ -614,7 +623,7 @@ func (c *client) newOAuth2Config() *oauth2.Config {
 func (c *client) newClient(ctx context.Context, u *model.User) (*bb.Client, error) {
 	config := c.newOAuth2Config()
 	t := &oauth2.Token{
-		AccessToken: u.Token,
+		AccessToken: u.AccessToken,
 	}
 	client := config.Client(ctx, t)
 	return bb.NewClient(c.urlAPI, client)

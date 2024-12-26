@@ -21,9 +21,9 @@ import (
 
 	"github.com/jellydator/ttlcache/v3"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
 // MembershipService is a service to check for user membership.
@@ -41,7 +41,7 @@ type membershipCache struct {
 // NewMembershipService creates a new membership service.
 func NewMembershipService(_store store.Store) MembershipService {
 	return &membershipCache{
-		ttl:   10 * time.Minute, //nolint: gomnd
+		ttl:   10 * time.Minute, //nolint:mnd
 		store: _store,
 		cache: ttlcache.New(ttlcache.WithDisableTouchOnHit[string, *model.OrgPerm]()),
 	}

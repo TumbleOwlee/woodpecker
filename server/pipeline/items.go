@@ -21,14 +21,14 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	pipeline_errors "go.woodpecker-ci.org/woodpecker/v2/pipeline/errors"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/compiler"
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	forge_types "go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/pipeline/stepbuilder"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	pipeline_errors "go.woodpecker-ci.org/woodpecker/v3/pipeline/errors"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml/compiler"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	forge_types "go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/pipeline/stepbuilder"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
 func parsePipeline(forge forge.Forge, store store.Store, currentPipeline *model.Pipeline, user *model.User, repo *model.Repo, yamls []*forge_types.FileMeta, envs map[string]string) ([]*stepbuilder.Item, error) {
@@ -38,19 +38,19 @@ func parsePipeline(forge forge.Forge, store store.Store, currentPipeline *model.
 	}
 
 	// get the previous pipeline so that we can send status change notifications
-	last, err := store.GetPipelineLastBefore(repo, currentPipeline.Branch, currentPipeline.ID)
+	prev, err := store.GetPipelineLastBefore(repo, currentPipeline.Branch, currentPipeline.ID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Error().Err(err).Str("repo", repo.FullName).Msgf("error getting last pipeline before pipeline number '%d'", currentPipeline.Number)
 	}
 
 	secretService := server.Config.Services.Manager.SecretServiceFromRepo(repo)
-	secs, err := secretService.SecretListPipeline(repo, currentPipeline, &model.ListOptions{All: true})
+	secs, err := secretService.SecretListPipeline(repo, currentPipeline)
 	if err != nil {
 		log.Error().Err(err).Msgf("error getting secrets for %s#%d", repo.FullName, currentPipeline.Number)
 	}
 
 	registryService := server.Config.Services.Manager.RegistryServiceFromRepo(repo)
-	regs, err := registryService.RegistryList(repo, &model.ListOptions{All: true})
+	regs, err := registryService.RegistryListPipeline(repo, currentPipeline)
 	if err != nil {
 		log.Error().Err(err).Msgf("error getting registry credentials for %s#%d", repo.FullName, currentPipeline.Number)
 	}
@@ -72,16 +72,17 @@ func parsePipeline(forge forge.Forge, store store.Store, currentPipeline *model.
 	}
 
 	b := stepbuilder.StepBuilder{
-		Repo:  repo,
-		Curr:  currentPipeline,
-		Last:  last,
-		Netrc: netrc,
-		Secs:  secs,
-		Regs:  regs,
-		Envs:  envs,
-		Host:  server.Config.Server.Host,
-		Yamls: yamls,
-		Forge: forge,
+		Repo:          repo,
+		Curr:          currentPipeline,
+		Prev:          prev,
+		Netrc:         netrc,
+		Secs:          secs,
+		Regs:          regs,
+		Envs:          envs,
+		Host:          server.Config.Server.Host,
+		Yamls:         yamls,
+		Forge:         forge,
+		DefaultLabels: server.Config.Pipeline.DefaultWorkflowLabels,
 		ProxyOpts: compiler.ProxyOptions{
 			NoProxy:    server.Config.Pipeline.Proxy.No,
 			HTTPProxy:  server.Config.Pipeline.Proxy.HTTP,
@@ -97,9 +98,9 @@ func createPipelineItems(c context.Context, forge forge.Forge, store store.Store
 ) (*model.Pipeline, []*stepbuilder.Item, error) {
 	pipelineItems, err := parsePipeline(forge, store, currentPipeline, user, repo, yamls, envs)
 	if pipeline_errors.HasBlockingErrors(err) {
-		currentPipeline, uerr := UpdateToStatusError(store, *currentPipeline, err)
-		if uerr != nil {
-			log.Error().Err(uerr).Msgf("error setting error status of pipeline for %s#%d", repo.FullName, currentPipeline.Number)
+		currentPipeline, uErr := UpdateToStatusError(store, *currentPipeline, err)
+		if uErr != nil {
+			log.Error().Err(uErr).Msgf("error setting error status of pipeline for %s#%d", repo.FullName, currentPipeline.Number)
 		} else {
 			updatePipelineStatus(c, forge, currentPipeline, repo, user)
 		}
@@ -117,7 +118,7 @@ func createPipelineItems(c context.Context, forge forge.Forge, store store.Store
 
 // setPipelineStepsOnPipeline is the link between pipeline representation in "pipeline package" and server
 // to be specific this func currently is used to convert the pipeline.Item list (crafted by StepBuilder.Build()) into
-// a pipeline that can be stored in the database by the server
+// a pipeline that can be stored in the database by the server.
 func setPipelineStepsOnPipeline(pipeline *model.Pipeline, pipelineItems []*stepbuilder.Item) *model.Pipeline {
 	var pidSequence int
 	for _, item := range pipelineItems {

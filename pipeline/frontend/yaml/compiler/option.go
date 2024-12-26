@@ -19,7 +19,7 @@ import (
 	"path"
 	"strings"
 
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/metadata"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/metadata"
 )
 
 // Option configures a compiler option.
@@ -97,8 +97,8 @@ func WithNetrc(username, password, machine string) Option {
 // plugin steps in the pipeline.
 func WithWorkspace(base, path string) Option {
 	return func(compiler *Compiler) {
-		compiler.base = base
-		compiler.path = path
+		compiler.workspaceBase = base
+		compiler.workspacePath = path
 	}
 }
 
@@ -150,45 +150,29 @@ func WithEnviron(env map[string]string) Option {
 }
 
 // WithNetworks configures the compiler with additional networks
-// to be connected to pipeline containers
+// to be connected to pipeline containers.
 func WithNetworks(networks ...string) Option {
 	return func(compiler *Compiler) {
 		compiler.networks = networks
 	}
 }
 
-// WithResourceLimit configures the compiler with default resource limits that
-// are applied each container in the pipeline.
-func WithResourceLimit(swap, mem, shmsize, cpuQuota, cpuShares int64, cpuSet string) Option {
+func WithDefaultClonePlugin(cloneImage string) Option {
 	return func(compiler *Compiler) {
-		compiler.reslimit = ResourceLimit{
-			MemSwapLimit: swap,
-			MemLimit:     mem,
-			ShmSize:      shmsize,
-			CPUQuota:     cpuQuota,
-			CPUShares:    cpuShares,
-			CPUSet:       cpuSet,
-		}
+		compiler.defaultClonePlugin = cloneImage
 	}
 }
 
-func WithDefaultCloneImage(cloneImage string) Option {
+func WithTrustedClonePlugins(images []string) Option {
 	return func(compiler *Compiler) {
-		compiler.defaultCloneImage = cloneImage
+		compiler.trustedClonePlugins = images
 	}
 }
 
-// WithTrusted configures the compiler with the trusted repo option
-func WithTrusted(trusted bool) Option {
+// WithTrustedSecurity configures the compiler with the trusted repo option.
+func WithTrustedSecurity(trusted bool) Option {
 	return func(compiler *Compiler) {
-		compiler.trustedPipeline = trusted
-	}
-}
-
-// WithNetrcOnlyTrusted configures the compiler with the netrcOnlyTrusted repo option
-func WithNetrcOnlyTrusted(only bool) Option {
-	return func(compiler *Compiler) {
-		compiler.netrcOnlyTrusted = only
+		compiler.securityTrustedPipeline = trusted
 	}
 }
 

@@ -25,21 +25,26 @@ import (
 	"strings"
 
 	"github.com/drone/envsubst"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
-	"go.woodpecker-ci.org/woodpecker/v2/cli/common"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/backend"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/backend/docker"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/backend/kubernetes"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/backend/local"
-	backendTypes "go.woodpecker-ci.org/woodpecker/v2/pipeline/backend/types"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/compiler"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/linter"
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/matrix"
-	"go.woodpecker-ci.org/woodpecker/v2/shared/utils"
+	"go.woodpecker-ci.org/woodpecker/v3/cli/common"
+	"go.woodpecker-ci.org/woodpecker/v3/cli/lint"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/docker"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/kubernetes"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/local"
+	backend_types "go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/types"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/metadata"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml/compiler"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml/linter"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml/matrix"
+	pipelineLog "go.woodpecker-ci.org/woodpecker/v3/pipeline/log"
+	"go.woodpecker-ci.org/woodpecker/v3/shared/constant"
+	"go.woodpecker-ci.org/woodpecker/v3/shared/utils"
 )
 
 // Command exports the exec command.
@@ -51,11 +56,17 @@ var Command = &cli.Command{
 	Flags:     utils.MergeSlices(flags, docker.Flags, kubernetes.Flags, local.Flags),
 }
 
-func run(c *cli.Context) error {
-	return common.RunPipelineFunc(c, execFile, execDir)
+var backends = []backend_types.Backend{
+	kubernetes.New(),
+	docker.New(),
+	local.New(),
 }
 
-func execDir(c *cli.Context, dir string) error {
+func run(ctx context.Context, c *cli.Command) error {
+	return common.RunPipelineFunc(ctx, c, execFile, execDir)
+}
+
+func execDir(ctx context.Context, c *cli.Command, dir string) error {
 	// TODO: respect pipeline dependency
 	repoPath := c.String("repo-path")
 	if repoPath != "" {
@@ -66,6 +77,7 @@ func execDir(c *cli.Context, dir string) error {
 	if runtime.GOOS == "windows" {
 		repoPath = convertPathForWindows(repoPath)
 	}
+	// TODO: respect depends_on and do parallel runs with output to multiple _windows_ e.g. tmux like
 	return filepath.Walk(dir, func(path string, info os.FileInfo, e error) error {
 		if e != nil {
 			return e
@@ -74,7 +86,7 @@ func execDir(c *cli.Context, dir string) error {
 		// check if it is a regular file (not dir)
 		if info.Mode().IsRegular() && (strings.HasSuffix(info.Name(), ".yaml") || strings.HasSuffix(info.Name(), ".yml")) {
 			fmt.Println("#", info.Name())
-			_ = runExec(c, path, repoPath) // TODO: should we drop errors or store them and report back?
+			_ = runExec(ctx, c, path, repoPath, false) // TODO: should we drop errors or store them and report back?
 			fmt.Println("")
 			return nil
 		}
@@ -83,7 +95,7 @@ func execDir(c *cli.Context, dir string) error {
 	})
 }
 
-func execFile(c *cli.Context, file string) error {
+func execFile(ctx context.Context, c *cli.Command, file string) error {
 	repoPath := c.String("repo-path")
 	if repoPath != "" {
 		repoPath, _ = filepath.Abs(repoPath)
@@ -93,10 +105,10 @@ func execFile(c *cli.Context, file string) error {
 	if runtime.GOOS == "windows" {
 		repoPath = convertPathForWindows(repoPath)
 	}
-	return runExec(c, file, repoPath)
+	return runExec(ctx, c, file, repoPath, true)
 }
 
-func runExec(c *cli.Context, file, repoPath string) error {
+func runExec(ctx context.Context, c *cli.Command, file, repoPath string, singleExec bool) error {
 	dat, err := os.ReadFile(file)
 	if err != nil {
 		return err
@@ -111,7 +123,7 @@ func runExec(c *cli.Context, file, repoPath string) error {
 		axes = append(axes, matrix.Axis{})
 	}
 	for _, axis := range axes {
-		err := execWithAxis(c, file, repoPath, axis)
+		err := execWithAxis(ctx, c, file, repoPath, axis, singleExec)
 		if err != nil {
 			return err
 		}
@@ -119,8 +131,20 @@ func runExec(c *cli.Context, file, repoPath string) error {
 	return nil
 }
 
-func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error {
-	metadata := metadataFromContext(c, axis)
+func execWithAxis(ctx context.Context, c *cli.Command, file, repoPath string, axis matrix.Axis, singleExec bool) error {
+	metadataWorkflow := &metadata.Workflow{}
+	if !singleExec {
+		// TODO: proper try to use the engine to generate the same metadata for workflows
+		// https://github.com/woodpecker-ci/woodpecker/pull/3967
+		metadataWorkflow.Name = strings.TrimSuffix(strings.TrimSuffix(file, ".yaml"), ".yml")
+	}
+	metadata, err := metadataFromContext(ctx, c, axis, metadataWorkflow)
+	if err != nil {
+		return fmt.Errorf("could not create metadata: %w", err)
+	} else if metadata == nil {
+		return fmt.Errorf("metadata is nil")
+	}
+
 	environ := metadata.Environ()
 	var secrets []compiler.Secret
 	for key, val := range metadata.Workflow.Matrix {
@@ -146,17 +170,20 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 	if err != nil {
 		return err
 	}
-	confstr, err := tmpl.Execute(func(name string) string {
+	confStr, err := tmpl.Execute(func(name string) string {
 		return environ[name]
 	})
 	if err != nil {
 		return err
 	}
 
-	conf, err := yaml.ParseString(confstr)
+	conf, err := yaml.ParseString(confStr)
 	if err != nil {
 		return err
 	}
+
+	// emulate server behavior https://github.com/woodpecker-ci/woodpecker/blob/eebaa10d104cbc3fa7ce4c0e344b0b7978405135/server/pipeline/stepbuilder/stepBuilder.go#L289-L295
+	prefix := "wp_" + ulid.Make().String()
 
 	// configure volumes for local execution
 	volumes := c.StringSlice("volumes")
@@ -172,23 +199,38 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 			workspacePath = c.String("workspace-path")
 		}
 
-		volumes = append(volumes, c.String("prefix")+"_default:"+workspaceBase)
+		volumes = append(volumes, prefix+"_default:"+workspaceBase)
 		volumes = append(volumes, repoPath+":"+path.Join(workspaceBase, workspacePath))
 	}
 
+	privilegedPlugins := c.StringSlice("plugins-privileged")
+
 	// lint the yaml file
-	if lerr := linter.New(linter.WithTrusted(true)).Lint([]*linter.WorkflowConfig{{
+	err = linter.New(
+		linter.WithTrusted(linter.TrustedConfiguration{
+			Security: c.Bool("repo-trusted-security"),
+			Network:  c.Bool("repo-trusted-network"),
+			Volumes:  c.Bool("repo-trusted-volumes"),
+		}),
+		linter.PrivilegedPlugins(privilegedPlugins),
+		linter.WithTrustedClonePlugins(constant.TrustedClonePlugins),
+	).Lint([]*linter.WorkflowConfig{{
 		File:      path.Base(file),
-		RawConfig: confstr,
+		RawConfig: confStr,
 		Workflow:  conf,
-	}}); lerr != nil {
-		return lerr
+	}})
+	if err != nil {
+		str, err := lint.FormatLintError(file, err, false)
+		fmt.Print(str)
+		if err != nil {
+			return err
+		}
 	}
 
 	// compiles the yaml file
 	compiled, err := compiler.New(
 		compiler.WithEscalated(
-			c.StringSlice("privileged")...,
+			privilegedPlugins...,
 		),
 		compiler.WithVolumes(volumes...),
 		compiler.WithWorkspace(
@@ -198,9 +240,7 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 		compiler.WithNetworks(
 			c.StringSlice("network")...,
 		),
-		compiler.WithPrefix(
-			c.String("prefix"),
-		),
+		compiler.WithPrefix(prefix),
 		compiler.WithProxy(compiler.ProxyOptions{
 			NoProxy:    c.String("backend-no-proxy"),
 			HTTPProxy:  c.String("backend-http-proxy"),
@@ -214,7 +254,7 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 			c.String("netrc-password"),
 			c.String("netrc-machine"),
 		),
-		compiler.WithMetadata(metadata),
+		compiler.WithMetadata(*metadata),
 		compiler.WithSecret(secrets...),
 		compiler.WithEnviron(pipelineEnv),
 	).Compile(conf)
@@ -222,12 +262,7 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 		return err
 	}
 
-	backendCtx := context.WithValue(c.Context, backendTypes.CliContext, c)
-	backends := []backendTypes.Backend{
-		kubernetes.New(),
-		docker.New(),
-		local.New(),
-	}
+	backendCtx := context.WithValue(ctx, backend_types.CliCommand, c)
 	backendEngine, err := backend.FindBackend(backendCtx, backends, c.String("backend-engine"))
 	if err != nil {
 		return err
@@ -237,21 +272,21 @@ func execWithAxis(c *cli.Context, file, repoPath string, axis matrix.Axis) error
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.Duration("timeout"))
+	pipelineCtx, cancel := context.WithTimeout(context.Background(), c.Duration("timeout"))
 	defer cancel()
-	ctx = utils.WithContextSigtermCallback(ctx, func() {
-		fmt.Println("ctrl+c received, terminating process")
+	pipelineCtx = utils.WithContextSigtermCallback(pipelineCtx, func() {
+		fmt.Printf("ctrl+c received, terminating current pipeline '%s'\n", confStr)
 	})
 
 	return pipeline.New(compiled,
-		pipeline.WithContext(ctx),
+		pipeline.WithContext(pipelineCtx), //nolint:contextcheck
 		pipeline.WithTracer(pipeline.DefaultTracer),
 		pipeline.WithLogger(defaultLogger),
 		pipeline.WithBackend(backendEngine),
 		pipeline.WithDescription(map[string]string{
 			"CLI": "exec",
 		}),
-	).Run(c.Context)
+	).Run(ctx)
 }
 
 // convertPathForWindows converts a path to use slash separators
@@ -263,7 +298,7 @@ func convertPathForWindows(path string) string {
 	base := filepath.VolumeName(path)
 
 	// Check if path is volume name like C:
-	//nolint: gomnd
+	//nolint:mnd
 	if len(base) == 2 {
 		path = strings.TrimPrefix(path, base)
 		base = strings.ToLower(strings.TrimSuffix(base, ":"))
@@ -273,8 +308,7 @@ func convertPathForWindows(path string) string {
 	return filepath.ToSlash(path)
 }
 
-var defaultLogger = pipeline.Logger(func(step *backendTypes.Step, rc io.Reader) error {
-	logStream := NewLineWriter(step.Name, step.UUID)
-	_, err := io.Copy(logStream, rc)
-	return err
+var defaultLogger = pipeline.Logger(func(step *backend_types.Step, rc io.ReadCloser) error {
+	logWriter := NewLineWriter(step.Name, step.UUID)
+	return pipelineLog.CopyLineByLine(logWriter, rc, pipeline.MaxLogLineLength)
 })

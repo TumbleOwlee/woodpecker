@@ -17,15 +17,16 @@ package web
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/router/middleware/session"
-	"go.woodpecker-ci.org/woodpecker/v2/shared/token"
-	"go.woodpecker-ci.org/woodpecker/v2/version"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/session"
+	"go.woodpecker-ci.org/woodpecker/v3/shared/token"
+	"go.woodpecker-ci.org/woodpecker/v3/version"
 )
 
 func Config(c *gin.Context) {
@@ -33,28 +34,19 @@ func Config(c *gin.Context) {
 
 	var csrf string
 	if user != nil {
-		csrf, _ = token.New(
-			token.CsrfToken,
-			user.Login,
-		).Sign(user.Hash)
-	}
-
-	// TODO: remove this and use the forge type from the corresponding repo
-	mainForge, err := server.Config.Services.Manager.ForgeMain()
-	if err != nil {
-		log.Error().Err(err).Msg("could not get main forge")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+		t := token.New(token.CsrfToken)
+		t.Set("user-id", strconv.FormatInt(user.ID, 10))
+		csrf, _ = t.Sign(user.Hash)
 	}
 
 	configData := map[string]any{
-		"user":               user,
-		"csrf":               csrf,
-		"version":            version.String(),
-		"skip_version_check": server.Config.WebUI.SkipVersionCheck,
-		"forge":              mainForge.Name(),
-		"root_path":          server.Config.Server.RootPath,
-		"enable_swagger":     server.Config.WebUI.EnableSwagger,
+		"user":                   user,
+		"csrf":                   csrf,
+		"version":                version.String(),
+		"skip_version_check":     server.Config.WebUI.SkipVersionCheck,
+		"root_path":              server.Config.Server.RootPath,
+		"enable_swagger":         server.Config.WebUI.EnableSwagger,
+		"user_registered_agents": !server.Config.Agent.DisableUserRegisteredAgentRegistration,
 	}
 
 	// default func map with json parser.
@@ -85,8 +77,8 @@ const configTemplate = `
 window.WOODPECKER_USER = {{ json .user }};
 window.WOODPECKER_CSRF = "{{ .csrf }}";
 window.WOODPECKER_VERSION = "{{ .version }}";
-window.WOODPECKER_FORGE = "{{ .forge }}";
 window.WOODPECKER_ROOT_PATH = "{{ .root_path }}";
 window.WOODPECKER_ENABLE_SWAGGER = {{ .enable_swagger }};
 window.WOODPECKER_SKIP_VERSION_CHECK = {{ .skip_version_check }}
+window.WOODPECKER_USER_REGISTERED_AGENTS = {{ .user_registered_agents }}
 `

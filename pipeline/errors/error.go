@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/multierr"
 
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/errors/types"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/errors/types"
 )
 
 type LinterErrorData struct {
@@ -14,6 +14,12 @@ type LinterErrorData struct {
 }
 
 type DeprecationErrorData struct {
+	File  string `json:"file"`
+	Field string `json:"field"`
+	Docs  string `json:"docs"`
+}
+
+type BadHabitErrorData struct {
 	File  string `json:"file"`
 	Field string `json:"field"`
 	Docs  string `json:"docs"`

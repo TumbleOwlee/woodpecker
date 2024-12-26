@@ -21,14 +21,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/securecookie"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/router/middleware/session"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/session"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
 // GetUsers
 //
-//	@Summary		Get all users
+//	@Summary		List users
 //	@Description	Returns all registered, active users in the system. Requires admin rights.
 //	@Router			/users [get]
 //	@Produce		json
@@ -67,7 +67,7 @@ func GetUser(c *gin.Context) {
 
 // PatchUser
 //
-//	@Summary		Change a user
+//	@Summary		Update a user
 //	@Description	Changes the data of an existing user. Requires admin rights.
 //	@Router			/users/{login} [patch]
 //	@Produce		json

@@ -26,10 +26,10 @@ import (
 	"github.com/franela/goblin"
 	"github.com/gin-gonic/gin"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/bitbucket/fixtures"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/bitbucket/internal"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/bitbucket/fixtures"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/bitbucket/internal"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 func Test_bitbucket(t *testing.T) {
@@ -60,7 +60,7 @@ func Test_bitbucket(t *testing.T) {
 			netrc, _ := forge.Netrc(fakeUser, fakeRepo)
 			g.Assert(netrc.Machine).Equal("bitbucket.org")
 			g.Assert(netrc.Login).Equal("x-token-auth")
-			g.Assert(netrc.Password).Equal(fakeUser.Token)
+			g.Assert(netrc.Password).Equal(fakeUser.AccessToken)
 		})
 
 		g.Describe("Given an authorization request", func() {
@@ -75,8 +75,8 @@ func Test_bitbucket(t *testing.T) {
 				})
 				g.Assert(err).IsNil()
 				g.Assert(u.Login).Equal(fakeUser.Login)
-				g.Assert(u.Token).Equal("2YotnFZFEjr1zCsicMWpAA")
-				g.Assert(u.Secret).Equal("tGzv3JOkF0XG5Qx2TlKWIA")
+				g.Assert(u.AccessToken).Equal("2YotnFZFEjr1zCsicMWpAA")
+				g.Assert(u.RefreshToken).Equal("tGzv3JOkF0XG5Qx2TlKWIA")
 			})
 			g.It("Should handle failure to exchange code", func() {
 				_, _, err := c.Login(ctx, &types.OAuthRequest{
@@ -90,22 +90,16 @@ func Test_bitbucket(t *testing.T) {
 				})
 				g.Assert(err).IsNotNil()
 			})
-			g.It("Should handle authentication errors", func() {
-				_, _, err := c.Login(ctx, &types.OAuthRequest{
-					Error: "invalid_scope",
-				})
-				g.Assert(err).IsNotNil()
-			})
 		})
 
 		g.Describe("Given an access token", func() {
 			g.It("Should return the authenticated user", func() {
-				login, err := c.Auth(ctx, fakeUser.Token, fakeUser.Secret)
+				login, err := c.Auth(ctx, fakeUser.AccessToken, fakeUser.RefreshToken)
 				g.Assert(err).IsNil()
 				g.Assert(login).Equal(fakeUser.Login)
 			})
 			g.It("Should handle a failure to resolve user", func() {
-				_, err := c.Auth(ctx, fakeUserNotFound.Token, fakeUserNotFound.Secret)
+				_, err := c.Auth(ctx, fakeUserNotFound.AccessToken, fakeUserNotFound.RefreshToken)
 				g.Assert(err).IsNotNil()
 			})
 		})
@@ -115,8 +109,8 @@ func Test_bitbucket(t *testing.T) {
 				ok, err := c.Refresh(ctx, fakeUserRefresh)
 				g.Assert(err).IsNil()
 				g.Assert(ok).IsTrue()
-				g.Assert(fakeUserRefresh.Token).Equal("2YotnFZFEjr1zCsicMWpAA")
-				g.Assert(fakeUserRefresh.Secret).Equal("tGzv3JOkF0XG5Qx2TlKWIA")
+				g.Assert(fakeUserRefresh.AccessToken).Equal("2YotnFZFEjr1zCsicMWpAA")
+				g.Assert(fakeUserRefresh.RefreshToken).Equal("tGzv3JOkF0XG5Qx2TlKWIA")
 			})
 			g.It("Should handle an empty access token", func() {
 				ok, err := c.Refresh(ctx, fakeUserRefreshEmpty)
@@ -217,14 +211,14 @@ func Test_bitbucket(t *testing.T) {
 
 		g.Describe("When requesting repo directory contents", func() {
 			g.It("Should return the details", func() {
-				files, err := c.Dir(ctx, fakeUser, fakeRepo, fakePipeline, "/dir")
+				files, err := c.Dir(ctx, fakeUser, fakeRepo, fakePipeline, "dir")
 				g.Assert(err).IsNil()
 				g.Assert(len(files)).Equal(3)
 				g.Assert(files[0].Name).Equal("README.md")
 				g.Assert(string(files[0].Data)).Equal("dummy payload")
 			})
 			g.It("Should handle not found errors", func() {
-				_, err := c.Dir(ctx, fakeUser, fakeRepo, fakePipeline, "dir_not_found/")
+				_, err := c.Dir(ctx, fakeUser, fakeRepo, fakePipeline, "dir_not_found")
 				g.Assert(err).IsNotNil()
 				g.Assert(errors.Is(err, &types.ErrConfigNotFound{})).IsTrue()
 			})
@@ -285,7 +279,7 @@ func Test_bitbucket(t *testing.T) {
 
 		g.It("Should parse the hook", func() {
 			buf := bytes.NewBufferString(fixtures.HookPush)
-			req, _ := http.NewRequest("POST", "/hook", buf)
+			req, _ := http.NewRequest(http.MethodPost, "/hook", buf)
 			req.Header = http.Header{}
 			req.Header.Set(hookEvent, hookPush)
 
@@ -299,38 +293,38 @@ func Test_bitbucket(t *testing.T) {
 
 var (
 	fakeUser = &model.User{
-		Login: "superman",
-		Token: "cfcd2084",
+		Login:       "superman",
+		AccessToken: "cfcd2084",
 	}
 
 	fakeUserRefresh = &model.User{
-		Login:  "superman",
-		Secret: "cfcd2084",
+		Login:        "superman",
+		RefreshToken: "cfcd2084",
 	}
 
 	fakeUserRefreshFail = &model.User{
-		Login:  "superman",
-		Secret: "refresh_token_not_found",
+		Login:        "superman",
+		RefreshToken: "refresh_token_not_found",
 	}
 
 	fakeUserRefreshEmpty = &model.User{
-		Login:  "superman",
-		Secret: "refresh_token_is_empty",
+		Login:        "superman",
+		RefreshToken: "refresh_token_is_empty",
 	}
 
 	fakeUserNotFound = &model.User{
-		Login: "superman",
-		Token: "user_not_found",
+		Login:       "superman",
+		AccessToken: "user_not_found",
 	}
 
 	fakeUserNoTeams = &model.User{
-		Login: "superman",
-		Token: "teams_not_found",
+		Login:       "superman",
+		AccessToken: "teams_not_found",
 	}
 
 	fakeUserNoRepos = &model.User{
-		Login: "superman",
-		Token: "repos_not_found",
+		Login:       "superman",
+		AccessToken: "repos_not_found",
 	}
 
 	fakeRepo = &model.Repo{

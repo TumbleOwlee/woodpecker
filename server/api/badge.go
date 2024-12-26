@@ -13,8 +13,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// This file has been modified by Informatyka Boguslawski sp. z o.o. sp.k.
 
 package api
 
@@ -27,17 +25,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/badges"
-	"go.woodpecker-ci.org/woodpecker/v2/server/ccmenu"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/badges"
+	"go.woodpecker-ci.org/woodpecker/v3/server/ccmenu"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store/types"
 )
 
 // GetBadge
 //
-//	@Summary	Get status badge, SVG format
+//	@Summary	Get status of pipeline as SVG badge
 //	@Router		/badges/{repo_id}/status.svg [get]
 //	@Produce	image/svg+xml
 //	@Success	200
@@ -77,7 +75,7 @@ func GetBadge(c *gin.Context) {
 	var name string = "unknown"
 	var status model.StatusValue = model.StatusDeclined
 
-	pipeline, err := _store.GetPipelineLast(repo, branch)
+	pipeline, err := _store.GetPipelineBadge(repo, branch)
 	if err != nil {
 		if !errors.Is(err, types.RecordNotExist) {
 			log.Warn().Err(err).Msg("could not get last pipeline for badge")
@@ -144,7 +142,7 @@ func GetCC(c *gin.Context) {
 		return
 	}
 
-	pipelines, err := _store.GetPipelineList(repo, &model.ListOptions{Page: 1, PerPage: 1})
+	pipelines, err := _store.GetPipelineList(repo, &model.ListOptions{Page: 1, PerPage: 1}, nil)
 	if err != nil && !errors.Is(err, types.RecordNotExist) {
 		log.Warn().Err(err).Msg("could not get pipeline list")
 		c.AbortWithStatus(http.StatusInternalServerError)

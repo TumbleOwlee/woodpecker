@@ -16,48 +16,42 @@ package config
 
 import (
 	"context"
-	"crypto"
+	"crypto/ed25519"
 	"fmt"
-	nethttp "net/http"
+	net_http "net/http"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/utils"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/utils"
 )
 
 type http struct {
 	endpoint   string
-	privateKey crypto.PrivateKey
+	privateKey ed25519.PrivateKey
 }
 
-// configData same as forge.FileMeta but with json tags and string data
+// configData same as forge.FileMeta but with json tags and string data.
 type configData struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
 }
 
 type requestStructure struct {
-	Repo          *model.Repo     `json:"repo"`
-	Pipeline      *model.Pipeline `json:"pipeline"`
-	Netrc         *model.Netrc    `json:"netrc"`
-	Configuration []*configData   `json:"configs"` // TODO: deprecate in favor of netrc and remove in next major release
+	Repo     *model.Repo     `json:"repo"`
+	Pipeline *model.Pipeline `json:"pipeline"`
+	Netrc    *model.Netrc    `json:"netrc"`
 }
 
 type responseStructure struct {
 	Configs []*configData `json:"configs"`
 }
 
-func NewHTTP(endpoint string, privateKey crypto.PrivateKey) Service {
+func NewHTTP(endpoint string, privateKey ed25519.PrivateKey) Service {
 	return &http{endpoint, privateKey}
 }
 
 func (h *http) Fetch(ctx context.Context, forge forge.Forge, user *model.User, repo *model.Repo, pipeline *model.Pipeline, oldConfigData []*types.FileMeta, _ bool) ([]*types.FileMeta, error) {
-	currentConfigs := make([]*configData, len(oldConfigData))
-	for i, pipe := range oldConfigData {
-		currentConfigs[i] = &configData{Name: pipe.Name, Data: string(pipe.Data)}
-	}
-
 	netrc, err := forge.Netrc(user, repo)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Netrc data from forge: %w", err)
@@ -65,25 +59,24 @@ func (h *http) Fetch(ctx context.Context, forge forge.Forge, user *model.User, r
 
 	response := new(responseStructure)
 	body := requestStructure{
-		Repo:          repo,
-		Pipeline:      pipeline,
-		Configuration: currentConfigs,
-		Netrc:         netrc,
+		Repo:     repo,
+		Pipeline: pipeline,
+		Netrc:    netrc,
 	}
 
-	status, err := utils.Send(ctx, "POST", h.endpoint, h.privateKey, body, response)
+	status, err := utils.Send(ctx, net_http.MethodPost, h.endpoint, h.privateKey, body, response)
 	if err != nil && status != 204 {
 		return nil, fmt.Errorf("failed to fetch config via http (%d) %w", status, err)
 	}
 
-	if status != nethttp.StatusOK {
+	if status != net_http.StatusOK {
 		return oldConfigData, nil
 	}
 
-	fileMetas := make([]*types.FileMeta, len(response.Configs))
+	fileMetaList := make([]*types.FileMeta, len(response.Configs))
 	for i, config := range response.Configs {
-		fileMetas[i] = &types.FileMeta{Name: config.Name, Data: []byte(config.Data)}
+		fileMetaList[i] = &types.FileMeta{Name: config.Name, Data: []byte(config.Data)}
 	}
 
-	return fileMetas, nil
+	return fileMetaList, nil
 }

@@ -14,10 +14,12 @@
 
 package store
 
-//go:generate mockery --name Store --output mocks --case underscore
+//go:generate mockery --name Store --output mocks --case underscore --note "+build test"
 
 import (
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"context"
+
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 // TODO: CreateX func should return new object to not indirect let storage change an existing object (alter ID etc...)
@@ -70,12 +72,14 @@ type Store interface {
 	GetPipeline(int64) (*model.Pipeline, error)
 	// GetPipelineNumber gets a pipeline by number.
 	GetPipelineNumber(*model.Repo, int64) (*model.Pipeline, error)
+	// GetPipelineBadge gets the last relevant pipeline for the badge.
+	GetPipelineBadge(*model.Repo, string) (*model.Pipeline, error)
 	// GetPipelineLast gets the last pipeline for the branch.
 	GetPipelineLast(*model.Repo, string) (*model.Pipeline, error)
 	// GetPipelineLastBefore gets the last pipeline before pipeline number N.
 	GetPipelineLastBefore(*model.Repo, string, int64) (*model.Pipeline, error)
 	// GetPipelineList gets a list of pipelines for the repository
-	GetPipelineList(*model.Repo, *model.ListOptions) ([]*model.Pipeline, error)
+	GetPipelineList(*model.Repo, *model.ListOptions, *model.PipelineFilter) ([]*model.Pipeline, error)
 	// GetActivePipelineList gets a list of the active pipelines for the repository
 	GetActivePipelineList(repo *model.Repo) ([]*model.Pipeline, error)
 	// GetPipelineQueue gets a list of pipelines in queue.
@@ -120,10 +124,15 @@ type Store interface {
 
 	// Registries
 	RegistryFind(*model.Repo, string) (*model.Registry, error)
-	RegistryList(*model.Repo, *model.ListOptions) ([]*model.Registry, error)
+	RegistryList(*model.Repo, bool, *model.ListOptions) ([]*model.Registry, error)
+	RegistryListAll() ([]*model.Registry, error)
 	RegistryCreate(*model.Registry) error
 	RegistryUpdate(*model.Registry) error
-	RegistryDelete(repo *model.Repo, addr string) error
+	RegistryDelete(*model.Registry) error
+	OrgRegistryFind(int64, string) (*model.Registry, error)
+	OrgRegistryList(int64, *model.ListOptions) ([]*model.Registry, error)
+	GlobalRegistryFind(string) (*model.Registry, error)
+	GlobalRegistryList(*model.ListOptions) ([]*model.Registry, error)
 
 	// Steps
 	StepLoad(int64) (*model.Step, error)
@@ -136,7 +145,7 @@ type Store interface {
 
 	// Logs
 	LogFind(*model.Step) ([]*model.LogEntry, error)
-	LogAppend(logEntry *model.LogEntry) error
+	LogAppend(*model.Step, []*model.LogEntry) error
 	LogDelete(*model.Step) error
 
 	// Tasks
@@ -173,6 +182,7 @@ type Store interface {
 	AgentList(p *model.ListOptions) ([]*model.Agent, error)
 	AgentUpdate(*model.Agent) error
 	AgentDelete(*model.Agent) error
+	AgentListForOrg(orgID int64, opt *model.ListOptions) ([]*model.Agent, error)
 
 	// Workflow
 	WorkflowGetTree(*model.Pipeline) ([]*model.Workflow, error)
@@ -195,5 +205,5 @@ type Store interface {
 	// Store operations
 	Ping() error
 	Close() error
-	Migrate(bool) error
+	Migrate(context.Context, bool) error
 }

@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/franela/goblin"
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v67/github"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 func Test_helper(t *testing.T) {
@@ -224,6 +224,7 @@ func Test_helper(t *testing.T) {
 			from := &github.DeploymentEvent{Deployment: &github.Deployment{}, Sender: &github.User{}}
 			from.Deployment.Description = github.String(":shipit:")
 			from.Deployment.Environment = github.String("production")
+			from.Deployment.Task = github.String("deploy")
 			from.Deployment.ID = github.Int64(42)
 			from.Deployment.Ref = github.String("main")
 			from.Deployment.SHA = github.String("f72fc19")

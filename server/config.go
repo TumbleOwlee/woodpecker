@@ -12,21 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// This file has been modified by Informatyka Boguslawski sp. z o.o. sp.k.
 
 package server
 
 import (
 	"time"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/cache"
-	"go.woodpecker-ci.org/woodpecker/v2/server/logging"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/pubsub"
-	"go.woodpecker-ci.org/woodpecker/v2/server/queue"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/permissions"
+	"go.woodpecker-ci.org/woodpecker/v3/server/cache"
+	"go.woodpecker-ci.org/woodpecker/v3/server/logging"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/pubsub"
+	"go.woodpecker-ci.org/woodpecker/v3/server/queue"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/log"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/permissions"
 )
 
 var Config = struct {
@@ -36,8 +35,10 @@ var Config = struct {
 		Logs       logging.Log
 		Membership cache.MembershipService
 		Manager    services.Manager
+		LogStore   log.Service
 	}
 	Server struct {
+		JWTSecret           string
 		Key                 string
 		Cert                string
 		OAuthHost           string
@@ -53,6 +54,9 @@ var Config = struct {
 		CustomCSSFile       string
 		CustomJsFile        string
 	}
+	Agent struct {
+		DisableUserRegisteredAgentRegistration bool
+	}
 	WebUI struct {
 		EnableSwagger    bool
 		SkipVersionCheck bool
@@ -63,11 +67,12 @@ var Config = struct {
 	Pipeline struct {
 		AuthenticatePublicRepos             bool
 		DefaultCancelPreviousPipelineEvents []model.WebhookEvent
-		DefaultCloneImage                   string
-		Limits                              model.ResourceLimit
+		DefaultWorkflowLabels               map[string]string
+		DefaultClonePlugin                  string
+		TrustedClonePlugins                 []string
 		Volumes                             []string
 		Networks                            []string
-		Privileged                          []string
+		PrivilegedPlugins                   []string
 		DefaultTimeout                      int64
 		MaxTimeout                          int64
 		Proxy                               struct {

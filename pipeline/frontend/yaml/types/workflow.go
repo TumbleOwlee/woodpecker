@@ -15,7 +15,7 @@
 package types
 
 import (
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/constraint"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/yaml/constraint"
 )
 
 type (
@@ -34,13 +34,6 @@ type (
 		// Undocumented
 		Networks WorkflowNetworks `yaml:"networks,omitempty"`
 		Volumes  WorkflowVolumes  `yaml:"volumes,omitempty"`
-
-		// Deprecated
-		PlatformDoNotUseIt string `yaml:"platform,omitempty"` // TODO: remove in next major version
-		// Deprecated
-		BranchesDoNotUseIt *constraint.List `yaml:"branches,omitempty"` // TODO: remove in next major version
-		// Deprecated
-		PipelineDoNotUseIt ContainerList `yaml:"pipeline,omitempty"` // TODO: remove in next major version
 	}
 
 	// Workspace defines a pipeline workspace.

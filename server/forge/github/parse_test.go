@@ -25,9 +25,9 @@ import (
 	"github.com/franela/goblin"
 	"github.com/stretchr/testify/assert"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/github/fixtures"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/github/fixtures"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 const (
@@ -40,7 +40,7 @@ const (
 
 func testHookRequest(payload []byte, event string) *http.Request {
 	buf := bytes.NewBuffer(payload)
-	req, _ := http.NewRequest("POST", "/hook", buf)
+	req, _ := http.NewRequest(http.MethodPost, "/hook", buf)
 	req.Header = http.Header{}
 	req.Header.Set(hookEvent, event)
 	return req
@@ -119,6 +119,8 @@ func Test_parser(t *testing.T) {
 				g.Assert(b).IsNotNil()
 				g.Assert(p).IsNil()
 				g.Assert(b.Event).Equal(model.EventDeploy)
+				g.Assert(b.DeployTo).Equal("production")
+				g.Assert(b.DeployTask).Equal("deploy")
 			})
 		})
 

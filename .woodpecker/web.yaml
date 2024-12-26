@@ -3,10 +3,9 @@ when:
   - event: push
     branch:
       - release/*
-      - renovate/*
 
 variables:
-  - &node_image 'docker.io/node:21-alpine'
+  - &node_image 'docker.io/node:23-alpine'
   - &when
     path:
       # related config files
@@ -35,7 +34,7 @@ steps:
       - pnpm lint
     when: *when
 
-  formatcheck:
+  format-check:
     depends_on:
       - install-dependencies
     image: *node_image
@@ -58,6 +57,7 @@ steps:
   test:
     depends_on:
       - install-dependencies
+      - format-check # wait for it else test artifacts are falsely detected as wrong
     image: *node_image
     directory: web/
     commands:

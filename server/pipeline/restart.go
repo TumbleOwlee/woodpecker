@@ -21,25 +21,23 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	forge_types "go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	forge_types "go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
-// Restart a pipeline by creating a new one out of the old and start it
+// Restart a pipeline by creating a new one out of the old and start it.
 func Restart(ctx context.Context, store store.Store, lastPipeline *model.Pipeline, user *model.User, repo *model.Repo, envs map[string]string) (*model.Pipeline, error) {
 	forge, err := server.Config.Services.Manager.ForgeFromRepo(repo)
 	if err != nil {
 		msg := fmt.Sprintf("failure to load forge for repo '%s'", repo.FullName)
 		log.Error().Err(err).Str("repo", repo.FullName).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
-	switch lastPipeline.Status {
-	case model.StatusDeclined,
-		model.StatusBlocked:
-		return nil, &ErrBadRequest{Msg: fmt.Sprintf("cannot restart a pipeline with status %s", lastPipeline.Status)}
+	if lastPipeline.Status == model.StatusBlocked {
+		return nil, &ErrBadRequest{Msg: "cannot restart a pipeline with status blocked"}
 	}
 
 	// fetch the old pipeline config from the database
@@ -64,19 +62,19 @@ func Restart(ctx context.Context, store store.Store, lastPipeline *model.Pipelin
 	}
 
 	newPipeline := createNewOutOfOld(lastPipeline)
-	newPipeline.Parent = lastPipeline.ID
+	newPipeline.Parent = lastPipeline.Number
 
 	err = store.CreatePipeline(newPipeline)
 	if err != nil {
 		msg := fmt.Sprintf("failure to save pipeline for %s", repo.FullName)
 		log.Error().Err(err).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	if len(configs) == 0 {
-		newPipeline, uerr := UpdateToStatusError(store, *newPipeline, errors.New("pipeline definition not found"))
-		if uerr != nil {
-			log.Debug().Err(uerr).Msg("failure to update pipeline status")
+		newPipeline, uErr := UpdateToStatusError(store, *newPipeline, errors.New("pipeline definition not found"))
+		if uErr != nil {
+			log.Debug().Err(uErr).Msg("failure to update pipeline status")
 		} else {
 			updatePipelineStatus(ctx, forge, newPipeline, repo, user)
 		}
@@ -85,27 +83,27 @@ func Restart(ctx context.Context, store store.Store, lastPipeline *model.Pipelin
 	if err := linkPipelineConfigs(store, configs, newPipeline.ID); err != nil {
 		msg := fmt.Sprintf("failure to persist pipeline config for %s.", repo.FullName)
 		log.Error().Err(err).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	newPipeline, pipelineItems, err := createPipelineItems(ctx, forge, store, newPipeline, user, repo, pipelineFiles, envs)
 	if err != nil {
 		msg := fmt.Sprintf("failure to createPipelineItems for %s", repo.FullName)
 		log.Error().Err(err).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	if err := prepareStart(ctx, forge, store, newPipeline, user, repo); err != nil {
 		msg := fmt.Sprintf("failure to prepare pipeline for %s", repo.FullName)
 		log.Error().Err(err).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	newPipeline, err = start(ctx, forge, store, newPipeline, user, repo, pipelineItems)
 	if err != nil {
 		msg := fmt.Sprintf("failure to start pipeline for %s", repo.FullName)
 		log.Error().Err(err).Msg(msg)
-		return nil, fmt.Errorf(msg)
+		return nil, errors.New(msg)
 	}
 
 	return newPipeline, nil

@@ -16,7 +16,6 @@ package badges
 
 import (
 	"strings"
-
 	"go.woodpecker-ci.org/woodpecker/v2/server/model"
 )
 

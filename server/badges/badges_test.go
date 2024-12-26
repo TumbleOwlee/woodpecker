@@ -19,10 +19,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
-// Generate an SVG badge based on a pipeline
+// Generate an SVG badge based on a pipeline.
 func TestGenerate(t *testing.T) {
 	assert.Equal(t, badgeNone, Generate(nil))
 	assert.Equal(t, badgeSuccess, Generate(&model.Pipeline{Status: model.StatusSuccess}))

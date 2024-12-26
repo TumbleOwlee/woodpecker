@@ -19,14 +19,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/router/middleware/session"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/session"
 )
 
 // GetGlobalSecretList
 //
-//	@Summary	Get the global secret list
+//	@Summary	List global secrets
 //	@Router		/secrets [get]
 //	@Produce	json
 //	@Success	200	{array}	Secret
@@ -71,7 +71,7 @@ func GetGlobalSecret(c *gin.Context) {
 
 // PostGlobalSecret
 //
-//	@Summary	Persist/create a global secret
+//	@Summary	Create a global secret
 //	@Router		/secrets [post]
 //	@Produce	json
 //	@Success	200	{object}	Secret

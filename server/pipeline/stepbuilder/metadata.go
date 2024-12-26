@@ -19,13 +19,13 @@ import (
 	"net/url"
 	"strings"
 
-	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/metadata"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/version"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline/frontend/metadata"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/version"
 )
 
 // MetadataFromStruct return the metadata from a pipeline will run with.
-func MetadataFromStruct(forge metadata.ServerForge, repo *model.Repo, pipeline, last *model.Pipeline, workflow *model.Workflow, sysURL string) metadata.Metadata {
+func MetadataFromStruct(forge metadata.ServerForge, repo *model.Repo, pipeline, prev *model.Pipeline, workflow *model.Workflow, sysURL string) metadata.Metadata {
 	host := sysURL
 	uri, err := url.Parse(sysURL)
 	if err == nil {
@@ -48,11 +48,16 @@ func MetadataFromStruct(forge metadata.ServerForge, repo *model.Repo, pipeline, 
 			Owner:       repo.Owner,
 			RemoteID:    fmt.Sprint(repo.ForgeRemoteID),
 			ForgeURL:    repo.ForgeURL,
+			SCM:         string(repo.SCMKind),
 			CloneURL:    repo.Clone,
 			CloneSSHURL: repo.CloneSSH,
 			Private:     repo.IsSCMPrivate,
 			Branch:      repo.Branch,
-			Trusted:     repo.IsTrusted,
+			Trusted: metadata.TrustedConfiguration{
+				Network:  repo.Trusted.Network,
+				Volumes:  repo.Trusted.Volumes,
+				Security: repo.Trusted.Security,
+			},
 		}
 
 		if idx := strings.LastIndex(repo.FullName, "/"); idx != -1 {
@@ -77,7 +82,7 @@ func MetadataFromStruct(forge metadata.ServerForge, repo *model.Repo, pipeline, 
 	return metadata.Metadata{
 		Repo:     fRepo,
 		Curr:     metadataPipelineFromModelPipeline(pipeline, true),
-		Prev:     metadataPipelineFromModelPipeline(last, false),
+		Prev:     metadataPipelineFromModelPipeline(prev, false),
 		Workflow: fWorkflow,
 		Step:     metadata.Step{},
 		Sys: metadata.System{
@@ -107,15 +112,16 @@ func metadataPipelineFromModelPipeline(pipeline *model.Pipeline, includeParent b
 	}
 
 	return metadata.Pipeline{
-		Number:   pipeline.Number,
-		Parent:   parent,
-		Created:  pipeline.Created,
-		Started:  pipeline.Started,
-		Finished: pipeline.Finished,
-		Status:   string(pipeline.Status),
-		Event:    string(pipeline.Event),
-		ForgeURL: pipeline.ForgeURL,
-		Target:   pipeline.Deploy,
+		Number:     pipeline.Number,
+		Parent:     parent,
+		Created:    pipeline.Created,
+		Started:    pipeline.Started,
+		Finished:   pipeline.Finished,
+		Status:     string(pipeline.Status),
+		Event:      string(pipeline.Event),
+		ForgeURL:   pipeline.ForgeURL,
+		DeployTo:   pipeline.DeployTo,
+		DeployTask: pipeline.DeployTask,
 		Commit: metadata.Commit{
 			Sha:     pipeline.Commit,
 			Ref:     pipeline.Ref,

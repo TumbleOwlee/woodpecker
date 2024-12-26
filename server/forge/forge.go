@@ -15,14 +15,14 @@
 
 package forge
 
-//go:generate mockery --name Forge --output mocks --case underscore
+//go:generate mockery --name Forge --output mocks --case underscore --note "+build test"
 
 import (
 	"context"
 	"net/http"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
 // TODO: use pagination

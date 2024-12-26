@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { computed, reactive, Ref, ref } from 'vue';
+import { computed, reactive, ref, type Ref } from 'vue';
 
 import useApiClient from '~/compositions/useApiClient';
-import { Pipeline, PipelineFeed, PipelineWorkflow } from '~/lib/api/types';
+import type { Pipeline, PipelineFeed, PipelineWorkflow } from '~/lib/api/types';
 import { useRepoStore } from '~/store/repos';
 import { comparePipelines, comparePipelinesWithStatus, isPipelineActive } from '~/utils/helpers';
 
@@ -13,11 +13,19 @@ export const usePipelineStore = defineStore('pipelines', () => {
   const pipelines: Map<number, Map<number, Pipeline>> = reactive(new Map());
 
   function setPipeline(repoId: number, pipeline: Pipeline) {
-    const repoPipelines = pipelines.get(repoId) || new Map();
+    const repoPipelines = pipelines.get(repoId) || new Map<number, Pipeline>();
     repoPipelines.set(pipeline.number, {
       ...(repoPipelines.get(pipeline.number) || {}),
       ...pipeline,
     });
+
+    // Update last pipeline number for the repo
+    const repo = repoStore.repos.get(repoId);
+    if (repo?.last_pipeline !== undefined && repo.last_pipeline < pipeline.number) {
+      repo.last_pipeline = pipeline.number;
+      repoStore.setRepo(repo);
+    }
+
     pipelines.set(repoId, repoPipelines);
   }
 
@@ -25,10 +33,14 @@ export const usePipelineStore = defineStore('pipelines', () => {
     return computed(() => Array.from(pipelines.get(repoId.value)?.values() || []).sort(comparePipelines));
   }
 
-  function getPipeline(repoId: Ref<number>, _pipelineNumber: Ref<string>) {
+  function getPipeline(repoId: Ref<number>, _pipelineNumber: Ref<string | number>) {
     return computed(() => {
-      const pipelineNumber = parseInt(_pipelineNumber.value, 10);
-      return pipelines.get(repoId.value)?.get(pipelineNumber);
+      if (typeof _pipelineNumber.value === 'string') {
+        const pipelineNumber = Number.parseInt(_pipelineNumber.value, 10);
+        return pipelines.get(repoId.value)?.get(pipelineNumber);
+      }
+
+      return pipelines.get(repoId.value)?.get(_pipelineNumber.value);
     });
   }
 
@@ -46,8 +58,8 @@ export const usePipelineStore = defineStore('pipelines', () => {
     setPipeline(repoId, pipeline);
   }
 
-  async function loadRepoPipelines(repoId: number) {
-    const _pipelines = await apiClient.getPipelineList(repoId);
+  async function loadRepoPipelines(repoId: number, page?: number) {
+    const _pipelines = await apiClient.getPipelineList(repoId, { page });
     _pipelines.forEach((pipeline) => {
       setPipeline(repoId, pipeline);
     });

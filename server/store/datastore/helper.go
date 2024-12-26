@@ -21,11 +21,11 @@ import (
 
 	"xorm.io/xorm"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store/types"
 )
 
-// wrapGet return error if err not nil or if requested entry do not exist
+// wrapGet return error if err not nil or if requested entry do not exist.
 func wrapGet(exist bool, err error) error {
 	if !exist {
 		return types.RecordNotExist
@@ -38,7 +38,7 @@ func wrapGet(exist bool, err error) error {
 	return nil
 }
 
-// wrapDelete return error if err not nil or if requested entry do not exist
+// wrapDelete return error if err not nil or if requested entry do not exist.
 func wrapDelete(c int64, err error) error {
 	if c == 0 {
 		return types.RecordNotExist
@@ -52,7 +52,7 @@ func wrapDelete(c int64, err error) error {
 }
 
 func (s storage) paginate(p *model.ListOptions) *xorm.Session {
-	if p.All {
+	if p == nil || p.All {
 		return s.engine.NewSession()
 	}
 	if p.PerPage < 1 {

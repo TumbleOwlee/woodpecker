@@ -22,11 +22,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v67/github"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/shared/utils"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/shared/utils"
 )
 
 const (
@@ -120,16 +120,17 @@ func parsePushHook(hook *github.PushEvent) (*model.Repo, *model.Pipeline) {
 // If the commit type is unsupported nil values are returned.
 func parseDeployHook(hook *github.DeploymentEvent) (*model.Repo, *model.Pipeline) {
 	pipeline := &model.Pipeline{
-		Event:    model.EventDeploy,
-		Commit:   hook.GetDeployment().GetSHA(),
-		ForgeURL: hook.GetDeployment().GetURL(),
-		Message:  hook.GetDeployment().GetDescription(),
-		Ref:      hook.GetDeployment().GetRef(),
-		Branch:   hook.GetDeployment().GetRef(),
-		Deploy:   hook.GetDeployment().GetEnvironment(),
-		Avatar:   hook.GetSender().GetAvatarURL(),
-		Author:   hook.GetSender().GetLogin(),
-		Sender:   hook.GetSender().GetLogin(),
+		Event:      model.EventDeploy,
+		Commit:     hook.GetDeployment().GetSHA(),
+		ForgeURL:   hook.GetDeployment().GetURL(),
+		Message:    hook.GetDeployment().GetDescription(),
+		Ref:        hook.GetDeployment().GetRef(),
+		Branch:     hook.GetDeployment().GetRef(),
+		Avatar:     hook.GetSender().GetAvatarURL(),
+		Author:     hook.GetSender().GetLogin(),
+		Sender:     hook.GetSender().GetLogin(),
+		DeployTo:   hook.GetDeployment().GetEnvironment(),
+		DeployTask: hook.GetDeployment().GetTask(),
 	}
 	// if the ref is a sha or short sha we need to manually construct the ref.
 	if strings.HasPrefix(pipeline.Commit, pipeline.Ref) || pipeline.Commit == pipeline.Ref {
@@ -156,6 +157,8 @@ func parsePullHook(hook *github.PullRequestEvent, merge bool) (*github.PullReque
 		event = model.EventPullClosed
 	}
 
+	fromFork := hook.GetPullRequest().GetHead().GetRepo().GetID() != hook.GetPullRequest().GetBase().GetRepo().GetID()
+
 	pipeline := &model.Pipeline{
 		Event:    event,
 		Commit:   hook.GetPullRequest().GetHead().GetSHA(),
@@ -172,6 +175,7 @@ func parsePullHook(hook *github.PullRequestEvent, merge bool) (*github.PullReque
 			hook.GetPullRequest().GetBase().GetRef(),
 		),
 		PullRequestLabels: convertLabels(hook.GetPullRequest().Labels),
+		FromFork:          fromFork,
 	}
 	if merge {
 		pipeline.Ref = fmt.Sprintf(mergeRefs, hook.GetPullRequest().GetNumber())
@@ -196,7 +200,7 @@ func parseReleaseHook(hook *github.ReleaseEvent) (*model.Repo, *model.Pipeline) 
 		Event:        model.EventRelease,
 		ForgeURL:     hook.GetRelease().GetHTMLURL(),
 		Ref:          fmt.Sprintf("refs/tags/%s", hook.GetRelease().GetTagName()),
-		Branch:       hook.GetRelease().GetTargetCommitish(),
+		Branch:       hook.GetRelease().GetTargetCommitish(), // cspell:disable-line
 		Message:      fmt.Sprintf("created release %s", name),
 		Author:       hook.GetRelease().GetAuthor().GetLogin(),
 		Avatar:       hook.GetRelease().GetAuthor().GetAvatarURL(),

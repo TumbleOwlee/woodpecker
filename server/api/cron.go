@@ -22,17 +22,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	cronScheduler "go.woodpecker-ci.org/woodpecker/v2/server/cron"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/pipeline"
-	"go.woodpecker-ci.org/woodpecker/v2/server/router/middleware/session"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	cronScheduler "go.woodpecker-ci.org/woodpecker/v3/server/cron"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/pipeline"
+	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/session"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
 // GetCron
 //
-//	@Summary	Get a cron job by id
+//	@Summary	Get a cron job
 //	@Router		/repos/{repo_id}/cron/{cron} [get]
 //	@Produce	json
 //	@Success	200	{object}	Cron
@@ -98,7 +98,7 @@ func RunCron(c *gin.Context) {
 
 // PostCron
 //
-//	@Summary	Persist/creat a cron job
+//	@Summary	Create a cron job
 //	@Router		/repos/{repo_id}/cron [post]
 //	@Produce	json
 //	@Success	200	{object}	Cron
@@ -233,7 +233,7 @@ func PatchCron(c *gin.Context) {
 
 // GetCronList
 //
-//	@Summary	Get the cron job list
+//	@Summary	List cron jobs
 //	@Router		/repos/{repo_id}/cron [get]
 //	@Produce	json
 //	@Success	200	{array}	Cron
@@ -254,7 +254,7 @@ func GetCronList(c *gin.Context) {
 
 // DeleteCron
 //
-//	@Summary	Delete a cron job by id
+//	@Summary	Delete a cron job
 //	@Router		/repos/{repo_id}/cron/{cron} [delete]
 //	@Produce	plain
 //	@Success	204

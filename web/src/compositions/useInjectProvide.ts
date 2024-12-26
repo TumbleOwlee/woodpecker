@@ -1,12 +1,18 @@
-import { inject as vueInject, InjectionKey, provide as vueProvide, Ref } from 'vue';
+import type { InjectionKey, Ref } from 'vue';
+import { inject as vueInject, provide as vueProvide } from 'vue';
 
-import { Org, OrgPermissions, Repo } from '~/lib/api/types';
+import type { Org, OrgPermissions, Pipeline, PipelineConfig, Repo } from '~/lib/api/types';
 
-export type InjectKeys = {
+import type { Tab } from './useTabs';
+
+export interface InjectKeys {
   repo: Ref<Repo>;
   org: Ref<Org | undefined>;
   'org-permissions': Ref<OrgPermissions | undefined>;
-};
+  pipeline: Ref<Pipeline | undefined>;
+  'pipeline-configs': Ref<PipelineConfig[] | undefined>;
+  tabs: Ref<Tab[]>;
+}
 
 export function inject<T extends keyof InjectKeys>(key: T): InjectKeys[T] {
   const value = vueInject<InjectKeys[T]>(key);

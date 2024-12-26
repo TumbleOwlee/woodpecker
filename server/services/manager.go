@@ -19,18 +19,18 @@ import (
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/config"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/environment"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/registry"
-	"go.woodpecker-ci.org/woodpecker/v2/server/services/secret"
-	"go.woodpecker-ci.org/woodpecker/v2/server/store"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/config"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/environment"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/registry"
+	"go.woodpecker-ci.org/woodpecker/v3/server/services/secret"
+	"go.woodpecker-ci.org/woodpecker/v3/server/store"
 )
 
-//go:generate mockery --name Manager --output mocks --case underscore
+//go:generate mockery --name Manager --output mocks --case underscore --note "+build test"
 
 const forgeCacheTTL = 10 * time.Minute
 
@@ -46,7 +46,7 @@ type Manager interface {
 	EnvironmentService() environment.Service
 	ForgeFromRepo(repo *model.Repo) (forge.Forge, error)
 	ForgeFromUser(user *model.User) (forge.Forge, error)
-	ForgeMain() (forge.Forge, error)
+	ForgeByID(forgeID int64) (forge.Forge, error)
 }
 
 type manager struct {
@@ -61,7 +61,7 @@ type manager struct {
 	setupForge          SetupForge
 }
 
-func NewManager(c *cli.Context, store store.Store, setupForge SetupForge) (Manager, error) {
+func NewManager(c *cli.Command, store store.Store, setupForge SetupForge) (Manager, error) {
 	signaturePrivateKey, signaturePublicKey, err := setupSignatureKeys(store)
 	if err != nil {
 		return nil, err
@@ -72,13 +72,18 @@ func NewManager(c *cli.Context, store store.Store, setupForge SetupForge) (Manag
 		return nil, err
 	}
 
+	configService, err := setupConfigService(c, signaturePrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return &manager{
 		signaturePrivateKey: signaturePrivateKey,
 		signaturePublicKey:  signaturePublicKey,
 		store:               store,
 		secret:              setupSecretService(store),
 		registry:            setupRegistryService(store, c.String("docker-config")),
-		config:              setupConfigService(c, signaturePrivateKey),
+		config:              configService,
 		environment:         environment.Parse(c.StringSlice("environment")),
 		forgeCache:          ttlcache.New(ttlcache.WithDisableTouchOnHit[int64, forge.Forge]()),
 		setupForge:          setupForge,
@@ -106,7 +111,7 @@ func (m *manager) RegistryService() registry.Service {
 }
 
 func (m *manager) ConfigServiceFromRepo(_ *model.Repo) config.Service {
-	// TODO: decied based on repo property which config service to use
+	// TODO: decide based on repo property which config service to use
 	return m.config
 }
 
@@ -115,18 +120,14 @@ func (m *manager) EnvironmentService() environment.Service {
 }
 
 func (m *manager) ForgeFromRepo(repo *model.Repo) (forge.Forge, error) {
-	return m.getForgeByID(repo.ForgeID)
+	return m.ForgeByID(repo.ForgeID)
 }
 
 func (m *manager) ForgeFromUser(user *model.User) (forge.Forge, error) {
-	return m.getForgeByID(user.ForgeID)
+	return m.ForgeByID(user.ForgeID)
 }
 
-func (m *manager) ForgeMain() (forge.Forge, error) {
-	return m.getForgeByID(1) // main forge is always 1 and is configured via environment variables
-}
-
-func (m *manager) getForgeByID(id int64) (forge.Forge, error) {
+func (m *manager) ForgeByID(id int64) (forge.Forge, error) {
 	item := m.forgeCache.Get(id)
 	if item != nil && !item.IsExpired() {
 		return item.Value(), nil

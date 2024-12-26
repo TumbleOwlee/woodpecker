@@ -25,12 +25,12 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge"
-	"go.woodpecker-ci.org/woodpecker/v2/server/forge/types"
-	"go.woodpecker-ci.org/woodpecker/v2/server/model"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge"
+	"go.woodpecker-ci.org/woodpecker/v3/server/forge/types"
+	"go.woodpecker-ci.org/woodpecker/v3/server/model"
 )
 
-// make sure RPC implements forge.Forge
+// make sure RPC implements forge.Forge.
 var _ forge.Forge = new(RPC)
 
 func Load(file string) (forge.Forge, error) {
@@ -44,7 +44,7 @@ func Load(file string) (forge.Forge, error) {
 			logger: log.With().Str("addon", file).Logger(),
 		},
 	})
-	// TODO defer client.Kill()
+	// TODO: defer client.Kill()
 
 	rpcClient, err := client.Client()
 	if err != nil {
@@ -139,8 +139,8 @@ func (g *RPC) Repo(_ context.Context, u *model.User, remoteID model.ForgeRemoteI
 		return nil, err
 	}
 
-	var resp *modelRepo
-	err = json.Unmarshal(jsonResp, resp)
+	var resp modelRepo
+	err = json.Unmarshal(jsonResp, &resp)
 	if err != nil {
 		return nil, err
 	}

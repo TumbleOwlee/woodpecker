@@ -27,8 +27,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"go.woodpecker-ci.org/woodpecker/v2/server"
-	"go.woodpecker-ci.org/woodpecker/v2/web"
+	"go.woodpecker-ci.org/woodpecker/v3/server"
+	"go.woodpecker-ci.org/woodpecker/v3/web"
 )
 
 var indexHTML []byte
@@ -127,7 +127,7 @@ func serveFile(f *prefixFS) func(ctx *gin.Context) {
 	}
 }
 
-// redirect return gin helper to redirect a request
+// redirect return gin helper to redirect a request.
 func redirect(location string, status ...int) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		code := http.StatusFound
