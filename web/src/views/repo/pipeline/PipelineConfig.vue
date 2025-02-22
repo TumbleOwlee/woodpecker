@@ -7,7 +7,7 @@
       collapsed-by-default
       :title="pipelineConfigsDecoded && pipelineConfigsDecoded.length > 1 ? pipelineConfig.name : ''"
     >
-      <SyntaxHighlight class="font-mono whitespace-pre overflow-auto" language="yaml" :code="pipelineConfig.data" />
+      <SyntaxHighlight class="overflow-auto font-mono whitespace-pre" language="yaml" :code="pipelineConfig.data" />
     </Panel>
   </div>
 </template>

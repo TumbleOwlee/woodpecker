@@ -51,6 +51,8 @@ var migrationTasks = []*xormigrate.Migration{
 	&removeRepoNetrcOnlyTrusted,
 	&renameTokenFields,
 	&setNewDefaultsForRequireApproval,
+	&removeRepoScm,
+	&unSanitizeOrgAndUserNames,
 }
 
 var allBeans = []any{

@@ -315,6 +315,7 @@ func (c *client) Status(ctx context.Context, u *model.User, repo *model.Repo, pi
 		URL:         common.GetPipelineStatusURL(repo, pipeline, workflow),
 		Key:         common.GetPipelineStatusContext(repo, pipeline, workflow),
 		Description: common.GetPipelineStatusDescription(pipeline.Status),
+		Ref:         pipeline.Ref,
 	}
 	_, err = bc.Projects.CreateBuildStatus(ctx, repo.Owner, repo.Name, pipeline.Commit, status)
 	return err
@@ -570,10 +571,32 @@ func (c *client) updatePipelineFromCommit(ctx context.Context, u *model.User, r 
 	return p, nil
 }
 
-// Teams is not supported.
-func (*client) Teams(_ context.Context, _ *model.User) ([]*model.Team, error) {
-	var teams []*model.Team
-	return teams, nil
+// Teams fetches all the projects for a given user and converts them into teams.
+func (c *client) Teams(ctx context.Context, u *model.User) ([]*model.Team, error) {
+	opts := &bb.ListOptions{Limit: listLimit}
+	allProjects := make([]*bb.Project, 0)
+
+	bc, err := c.newClient(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create client: %w", err)
+	}
+
+	for {
+		projects, resp, err := bc.Projects.ListProjects(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch projects: %w", err)
+		}
+
+		allProjects = append(allProjects, projects...)
+
+		if resp.LastPage {
+			break
+		}
+
+		opts.Start = resp.NextPageStart
+	}
+
+	return convertProjectsToTeams(allProjects, bc), nil
 }
 
 // TeamPerm is not supported.

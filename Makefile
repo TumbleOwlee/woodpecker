@@ -40,7 +40,7 @@ CGO_ENABLED ?= 1 # only used to compile server
 HAS_GO = $(shell hash go > /dev/null 2>&1 && echo "GO" || echo "NOGO" )
 ifeq ($(HAS_GO),GO)
   # renovate: datasource=docker depName=docker.io/techknowlogick/xgo
-	XGO_VERSION ?= go-1.23.x
+	XGO_VERSION ?= go-1.24.x
 	CGO_CFLAGS ?= $(shell go env CGO_CFLAGS)
 endif
 CGO_CFLAGS ?=
@@ -337,9 +337,17 @@ spellcheck:
 	  pnpx cspell lint --no-progress stdin
 
 ##@ Docs
-.PHONY: docs
-docs: ## Generate docs (currently only for the cli)
+.PHONY: docs-dependencies
+docs-dependencies: ## Install docs dependencies
+	(cd docs/; pnpm install --frozen-lockfile)
+
+.PHONY: generate-docs
+generate-docs: ## Generate docs (currently only for the cli)
 	CGO_ENABLED=0 go generate cmd/cli/app.go
 	CGO_ENABLED=0 go generate cmd/server/openapi.go
+
+.PHONY: build-docs
+build-docs: generate-docs docs-dependencies ## Build the docs
+	(cd docs/; pnpm build)
 
 endif
