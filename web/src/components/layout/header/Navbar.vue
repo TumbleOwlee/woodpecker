@@ -9,7 +9,7 @@
       </router-link>
       <router-link v-if="user" :to="{ name: 'repos' }" class="navbar-clickable navbar-link">
         <span class="flex md:hidden">{{ $t('repos') }}</span>
-        <span class="hidden md:flex">{{ $t('repositories') }}</span>
+        <span class="hidden md:flex">{{ $t('repositories.title') }}</span>
       </router-link>
       <a href="https://woodpecker-ci.org/" target="_blank" class="navbar-clickable navbar-link hidden md:flex">{{
         $t('docs')
@@ -33,7 +33,12 @@
       <IconButton v-if="user" :to="{ name: 'user' }" :title="$t('user.settings.settings')" class="navbar-icon p-1.5!">
         <img v-if="user && user.avatar_url" class="rounded-md" :src="`${user.avatar_url}`" />
       </IconButton>
-      <Button v-else :text="$t('login')" :to="`/login?url=${route.fullPath}`" />
+      <Button
+        v-else
+        :text="$t('login')"
+        :to="`/login?url=${route.fullPath}`"
+        class="navbar-link !text-wp-primary-text-100 bg-wp-primary-200 dark:bg-wp-primary-300 !border-transparent !shadow-none"
+      />
     </div>
   </nav>
 </template>

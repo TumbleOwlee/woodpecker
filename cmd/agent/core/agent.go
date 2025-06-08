@@ -40,6 +40,7 @@ import (
 
 	"go.woodpecker-ci.org/woodpecker/v3/agent"
 	agent_rpc "go.woodpecker-ci.org/woodpecker/v3/agent/rpc"
+	"go.woodpecker-ci.org/woodpecker/v3/pipeline"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/types"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline/rpc"
@@ -87,7 +88,7 @@ func run(ctx context.Context, c *cli.Command, backends []types.Backend) error {
 		hostname, _ = os.Hostname()
 	}
 
-	counter.Polling = int(c.Int("max-workflows"))
+	counter.Polling = c.Int("max-workflows")
 	counter.Running = 0
 
 	if c.Bool("healthcheck") {
@@ -198,7 +199,7 @@ func run(ctx context.Context, c *cli.Command, backends []types.Backend) error {
 	}
 	log.Debug().Msgf("loaded %s backend engine", backendEngine.Name())
 
-	maxWorkflows := int(c.Int("max-workflows"))
+	maxWorkflows := c.Int("max-workflows")
 
 	customLabels := make(map[string]string)
 	if err := stringSliceAddToMap(c.StringSlice("labels"), customLabels); err != nil {
@@ -245,12 +246,11 @@ func run(ctx context.Context, c *cli.Command, backends []types.Backend) error {
 	}
 
 	// set default labels ...
-	labels := map[string]string{
-		"hostname": hostname,
-		"platform": engInfo.Platform,
-		"backend":  backendEngine.Name(),
-		"repo":     "*", // allow all repos by default
-	}
+	labels := make(map[string]string)
+	labels[pipeline.LabelFilterHostname] = hostname
+	labels[pipeline.LabelFilterPlatform] = engInfo.Platform
+	labels[pipeline.LabelFilterBackend] = backendEngine.Name()
+	labels[pipeline.LabelFilterRepo] = "*" // allow all repos by default
 	// ... and let it overwrite by custom ones
 	maps.Copy(labels, customLabels)
 
@@ -313,7 +313,7 @@ func runWithRetry(backendEngines []types.Backend) func(ctx context.Context, c *c
 
 		initHealth()
 
-		retryCount := int(c.Int("connect-retry-count"))
+		retryCount := c.Int("connect-retry-count")
 		retryDelay := c.Duration("connect-retry-delay")
 		var err error
 		for i := 0; i < retryCount; i++ {

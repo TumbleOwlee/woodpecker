@@ -1,5 +1,435 @@
 # Changelog
 
+## [3.7.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.7.0) - 2025-06-06
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @Epsilon02, @Levy-Tal, @OCram85, @Spiffyk, @SuperSandro2000, @deltamualpha, @qwerty287, @rruzicic, @sebastinez, @xoxys
+
+### 📚 Documentation
+
+- update docs-link for todo checker [[#5236](https://github.com/woodpecker-ci/woodpecker/pull/5236)]
+- Add `sccache` plugin [[#5234](https://github.com/woodpecker-ci/woodpecker/pull/5234)]
+- fix(deps): update dependency redocusaurus to v2.3.0 [[#5203](https://github.com/woodpecker-ci/woodpecker/pull/5203)]
+- chore(deps): update docs npm deps non-major [[#5197](https://github.com/woodpecker-ci/woodpecker/pull/5197)]
+- Add reference to woodpecker-community plugin org [[#5186](https://github.com/woodpecker-ci/woodpecker/pull/5186)]
+- fix(deps): update docs npm deps non-major [[#5183](https://github.com/woodpecker-ci/woodpecker/pull/5183)]
+- Move `gitea-package` plugin to codeberg [[#5175](https://github.com/woodpecker-ci/woodpecker/pull/5175)]
+- add Portainer Service Update plugin [[#5172](https://github.com/woodpecker-ci/woodpecker/pull/5172)]
+- Split 'pull' option docs from 'image' docs [[#5161](https://github.com/woodpecker-ci/woodpecker/pull/5161)]
+- chore(deps): update docs npm deps non-major [[#5164](https://github.com/woodpecker-ci/woodpecker/pull/5164)]
+
+### 📈 Enhancement
+
+- Move forge webhook fixtures into own files [[#5216](https://github.com/woodpecker-ci/woodpecker/pull/5216)]
+- Treat no available route in grpc as fatal error [[#5192](https://github.com/woodpecker-ci/woodpecker/pull/5192)]
+
+### 🐛 Bug Fixes
+
+- Always collect metrics (reverts #4667) [[#5213](https://github.com/woodpecker-ci/woodpecker/pull/5213)]
+- fix(bitbucketDC): manual event has broken commit link [[#5160](https://github.com/woodpecker-ci/woodpecker/pull/5160)]
+- fix(bitbucketdc): build status gets incorrectly reported on multi workflow builds [[#5178](https://github.com/woodpecker-ci/woodpecker/pull/5178)]
+- fix(bitbucketdc): build status not reported on PR builds [[#5162](https://github.com/woodpecker-ci/woodpecker/pull/5162)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang-packages to v28.2.1+incompatible [[#5217](https://github.com/woodpecker-ci/woodpecker/pull/5217)]
+- fix(deps): update dependency simple-icons to v15 [[#5232](https://github.com/woodpecker-ci/woodpecker/pull/5232)]
+- chore(deps): update woodpeckerci/plugin-git docker tag to v2.6.5 [[#5230](https://github.com/woodpecker-ci/woodpecker/pull/5230)]
+- fix(deps): update web npm deps non-major [[#5228](https://github.com/woodpecker-ci/woodpecker/pull/5228)]
+- chore(deps): update docker.io/woodpeckerci/plugin-surge-preview docker tag to v1.4.0 [[#5225](https://github.com/woodpecker-ci/woodpecker/pull/5225)]
+- chore(deps): update docker.io/alpine docker tag to v3.22 [[#5224](https://github.com/woodpecker-ci/woodpecker/pull/5224)]
+- fix(deps): update golang-packages [[#5209](https://github.com/woodpecker-ci/woodpecker/pull/5209)]
+- chore(deps): lock file maintenance [[#5204](https://github.com/woodpecker-ci/woodpecker/pull/5204)]
+- fix(deps): update dependency simple-icons to v14.15.0 [[#5202](https://github.com/woodpecker-ci/woodpecker/pull/5202)]
+- fix(deps): update dependency vue-i18n to v11.1.4 [[#5201](https://github.com/woodpecker-ci/woodpecker/pull/5201)]
+- chore(deps): update docker.io/woodpeckerci/plugin-surge-preview docker tag to v1.3.6 [[#5200](https://github.com/woodpecker-ci/woodpecker/pull/5200)]
+- fix(deps): update web npm deps non-major [[#5198](https://github.com/woodpecker-ci/woodpecker/pull/5198)]
+- fix(deps): update module github.com/oklog/ulid/v2 to v2.1.1 [[#5194](https://github.com/woodpecker-ci/woodpecker/pull/5194)]
+- fix(deps): update module github.com/gin-gonic/gin to v1.10.1 [[#5193](https://github.com/woodpecker-ci/woodpecker/pull/5193)]
+- fix(deps): update module gitlab.com/gitlab-org/api/client-go to v0.129.0 [[#5190](https://github.com/woodpecker-ci/woodpecker/pull/5190)]
+- chore(deps): lock file maintenance [[#5189](https://github.com/woodpecker-ci/woodpecker/pull/5189)]
+- chore(deps): update pre-commit hook igorshubovych/markdownlint-cli to v0.45.0 [[#5187](https://github.com/woodpecker-ci/woodpecker/pull/5187)]
+- fix(deps): update dependency simple-icons to v14.14.0 [[#5188](https://github.com/woodpecker-ci/woodpecker/pull/5188)]
+- fix(deps): update web npm deps non-major [[#5185](https://github.com/woodpecker-ci/woodpecker/pull/5185)]
+- fix(deps): update golang-packages to v0.33.1 [[#5184](https://github.com/woodpecker-ci/woodpecker/pull/5184)]
+- fix(deps): update golang-packages [[#5180](https://github.com/woodpecker-ci/woodpecker/pull/5180)]
+- chore(deps): lock file maintenance [[#5171](https://github.com/woodpecker-ci/woodpecker/pull/5171)]
+- fix(deps): update module github.com/google/go-github/v71 to v72 [[#5167](https://github.com/woodpecker-ci/woodpecker/pull/5167)]
+- fix(deps): update dependency simple-icons to v14.13.0 [[#5170](https://github.com/woodpecker-ci/woodpecker/pull/5170)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.3 [[#5169](https://github.com/woodpecker-ci/woodpecker/pull/5169)]
+- fix(deps): update web npm deps non-major [[#5166](https://github.com/woodpecker-ci/woodpecker/pull/5166)]
+- chore(deps): update postgres docker tag to v17.5 [[#5165](https://github.com/woodpecker-ci/woodpecker/pull/5165)]
+- chore(deps): update dependency golang to v1.24.3 [[#5163](https://github.com/woodpecker-ci/woodpecker/pull/5163)]
+
+### Misc
+
+- Ignore direnv config and folder [[#5235](https://github.com/woodpecker-ci/woodpecker/pull/5235)]
+- flake.lock: Update [[#5206](https://github.com/woodpecker-ci/woodpecker/pull/5206)]
+- Add Bluesky post plugin [[#5156](https://github.com/woodpecker-ci/woodpecker/pull/5156)]
+
+## [3.6.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.6.0) - 2025-05-06
+
+### ❤️ Thanks to all contributors! ❤️
+
+@Spiffyk, @SuperSandro2000, @gsaslis, @joshuachp, @lukashass, @maurerle, @pat-s, @qwerty287, @renich, @sp1thas, @xoxys
+
+### ✨ Features
+
+- Use docker go client directly [[#5134](https://github.com/woodpecker-ci/woodpecker/pull/5134)]
+
+### 📚 Documentation
+
+- Simplify NixOS docs [[#5120](https://github.com/woodpecker-ci/woodpecker/pull/5120)]
+- chore(deps): lock file maintenance [[#5150](https://github.com/woodpecker-ci/woodpecker/pull/5150)]
+- plugins: Add SSH/SCP plugin [[#4871](https://github.com/woodpecker-ci/woodpecker/pull/4871)]
+- chore(deps): update dependency @types/node to v22.15.3 [[#5142](https://github.com/woodpecker-ci/woodpecker/pull/5142)]
+- chore(deps): lock file maintenance [[#5136](https://github.com/woodpecker-ci/woodpecker/pull/5136)]
+- Explain tasks [[#5129](https://github.com/woodpecker-ci/woodpecker/pull/5129)]
+- Mention named volumes [[#5130](https://github.com/woodpecker-ci/woodpecker/pull/5130)]
+- chore(deps): update docs npm deps non-major [[#5128](https://github.com/woodpecker-ci/woodpecker/pull/5128)]
+- Fix link to agent configuration in `v3.5` docs [[#5122](https://github.com/woodpecker-ci/woodpecker/pull/5122)]
+- Fix link to agent configuration in `next` docs [[#5119](https://github.com/woodpecker-ci/woodpecker/pull/5119)]
+- Move `plugin-s3` to Codeberg [[#5118](https://github.com/woodpecker-ci/woodpecker/pull/5118)]
+- Use slugified plugin urls in docs [[#5116](https://github.com/woodpecker-ci/woodpecker/pull/5116)]
+- Fix example value for `WOODPECKER_GRPC_ADDR` in autoscaler docs [[#5102](https://github.com/woodpecker-ci/woodpecker/pull/5102)]
+- .deb and .rpm installation commands fixed [[#5087](https://github.com/woodpecker-ci/woodpecker/pull/5087)]
+- chore(deps): update dependency @types/react to v19.1.2 [[#5107](https://github.com/woodpecker-ci/woodpecker/pull/5107)]
+- Slugify plugin names used for urls [[#5098](https://github.com/woodpecker-ci/woodpecker/pull/5098)]
+- Mention `backend_options` in workflow syntax docs [[#5096](https://github.com/woodpecker-ci/woodpecker/pull/5096)]
+- Document rootless container requirements for skip-clone [[#5056](https://github.com/woodpecker-ci/woodpecker/pull/5056)]
+
+### 📈 Enhancement
+
+- View full pipeline duration in tooltip [[#5123](https://github.com/woodpecker-ci/woodpecker/pull/5123)]
+- Set dynamic page titles [[#5104](https://github.com/woodpecker-ci/woodpecker/pull/5104)]
+- Use centrally typed inject provide in Vue [[#5113](https://github.com/woodpecker-ci/woodpecker/pull/5113)]
+- Scroll to selected pipeline step [[#5103](https://github.com/woodpecker-ci/woodpecker/pull/5103)]
+
+### 🐛 Bug Fixes
+
+- Fix args docs for admin secrets [[#5127](https://github.com/woodpecker-ci/woodpecker/pull/5127)]
+- Add name flag to admin secret add [[#5101](https://github.com/woodpecker-ci/woodpecker/pull/5101)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang-packages [[#5152](https://github.com/woodpecker-ci/woodpecker/pull/5152)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.6 [[#5149](https://github.com/woodpecker-ci/woodpecker/pull/5149)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6.0.1 [[#5147](https://github.com/woodpecker-ci/woodpecker/pull/5147)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.37.1 [[#5148](https://github.com/woodpecker-ci/woodpecker/pull/5148)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v6 [[#5144](https://github.com/woodpecker-ci/woodpecker/pull/5144)]
+- fix(deps): update web npm deps non-major [[#5143](https://github.com/woodpecker-ci/woodpecker/pull/5143)]
+- fix(deps): update module github.com/getkin/kin-openapi to v0.132.0 [[#5141](https://github.com/woodpecker-ci/woodpecker/pull/5141)]
+- chore(deps): update dependency vite to v6.3.4 [security] [[#5139](https://github.com/woodpecker-ci/woodpecker/pull/5139)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.2 [[#5137](https://github.com/woodpecker-ci/woodpecker/pull/5137)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.3.1 [[#5135](https://github.com/woodpecker-ci/woodpecker/pull/5135)]
+- fix(deps): update module github.com/docker/docker to v28 [[#5132](https://github.com/woodpecker-ci/woodpecker/pull/5132)]
+- fix(deps): update module github.com/docker/cli to v28 [[#5131](https://github.com/woodpecker-ci/woodpecker/pull/5131)]
+- fix(deps): update dependency vue-router to v4.5.1 [[#5126](https://github.com/woodpecker-ci/woodpecker/pull/5126)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.5 [[#5125](https://github.com/woodpecker-ci/woodpecker/pull/5125)]
+- fix(deps): update web npm deps non-major [[#5077](https://github.com/woodpecker-ci/woodpecker/pull/5077)]
+- fix(deps): update golang-packages [[#5121](https://github.com/woodpecker-ci/woodpecker/pull/5121)]
+- fix(deps): update golang-packages [[#5111](https://github.com/woodpecker-ci/woodpecker/pull/5111)]
+- chore(deps): lock file maintenance [[#5112](https://github.com/woodpecker-ci/woodpecker/pull/5112)]
+- chore(deps): update docker.io/mysql docker tag to v9.3.0 [[#5109](https://github.com/woodpecker-ci/woodpecker/pull/5109)]
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v3.2.0 [[#5110](https://github.com/woodpecker-ci/woodpecker/pull/5110)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.2 [[#5108](https://github.com/woodpecker-ci/woodpecker/pull/5108)]
+- fix(deps): update golang-packages [[#5097](https://github.com/woodpecker-ci/woodpecker/pull/5097)]
+
+### Misc
+
+- Add pre-commit plugin [[#5146](https://github.com/woodpecker-ci/woodpecker/pull/5146)]
+- Fix gitpod golang version [[#5093](https://github.com/woodpecker-ci/woodpecker/pull/5093)]
+
+## [3.5.2](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.5.2) - 2025-04-15
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 📚 Documentation
+
+- chore(deps): lock file maintenance [[#5092](https://github.com/woodpecker-ci/woodpecker/pull/5092)]
+- fix(deps): update docs npm deps non-major [[#5089](https://github.com/woodpecker-ci/woodpecker/pull/5089)]
+- Move plugin-surge docs to codeberg [[#5086](https://github.com/woodpecker-ci/woodpecker/pull/5086)]
+- chore(deps): lock file maintenance [[#5080](https://github.com/woodpecker-ci/woodpecker/pull/5080)]
+- chore(deps): update docs npm deps non-major [[#5075](https://github.com/woodpecker-ci/woodpecker/pull/5075)]
+
+### 🐛 Bug Fixes
+
+- Avoid db errors while executing migrations check [[#5072](https://github.com/woodpecker-ci/woodpecker/pull/5072)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/google/go-github/v70 to v71 [[#5090](https://github.com/woodpecker-ci/woodpecker/pull/5090)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2.1.1 [[#5091](https://github.com/woodpecker-ci/woodpecker/pull/5091)]
+- chore(deps): update dependency vite to v6.2.6 [security] [[#5088](https://github.com/woodpecker-ci/woodpecker/pull/5088)]
+- fix(deps): update module github.com/prometheus/client_golang to v1.22.0 [[#5084](https://github.com/woodpecker-ci/woodpecker/pull/5084)]
+- fix(deps): update golang-packages [[#5083](https://github.com/woodpecker-ci/woodpecker/pull/5083)]
+- fix(deps): update module golang.org/x/crypto to v0.37.0 [[#5079](https://github.com/woodpecker-ci/woodpecker/pull/5079)]
+- fix(deps): update golang-packages [[#5078](https://github.com/woodpecker-ci/woodpecker/pull/5078)]
+- fix(deps): update module github.com/fsnotify/fsnotify to v1.9.0 [[#5076](https://github.com/woodpecker-ci/woodpecker/pull/5076)]
+- chore(deps): update dependency vite to v6.2.5 [security] [[#5074](https://github.com/woodpecker-ci/woodpecker/pull/5074)]
+
+### Misc
+
+- Add markdown template for release umbrella issues [[#5055](https://github.com/woodpecker-ci/woodpecker/pull/5055)]
+
+## [3.5.1](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.5.1) - 2025-04-04
+
+### ❤️ Thanks to all contributors! ❤️
+
+@xoxys
+
+### 🐛 Bug Fixes
+
+- Add missing icon for changes files tab [[#5068](https://github.com/woodpecker-ci/woodpecker/pull/5068)]
+- Improve CLI info text and remove markdown [[#5069](https://github.com/woodpecker-ci/woodpecker/pull/5069)]
+- Fix cli format flag fallback [[#5057](https://github.com/woodpecker-ci/woodpecker/pull/5057)]
+
+### 📚 Documentation
+
+- chore(deps): update docs npm deps non-major [[#5060](https://github.com/woodpecker-ci/woodpecker/pull/5060)]
+
+### 📦️ Dependency
+
+- fix(deps): update module code.gitea.io/sdk/gitea to v0.21.0 [[#5067](https://github.com/woodpecker-ci/woodpecker/pull/5067)]
+- chore(deps): lock file maintenance [[#5062](https://github.com/woodpecker-ci/woodpecker/pull/5062)]
+- fix(deps): update module github.com/mattn/go-sqlite3 to v1.14.27 [[#5058](https://github.com/woodpecker-ci/woodpecker/pull/5058)]
+
+## [3.5.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.5.0) - 2025-04-02
+
+### ❤️ Thanks to all contributors! ❤️
+
+@6543, @Levy-Tal, @anbraten, @jenrik, @nekowinston, @qwerty287, @rhafer, @xoxys
+
+### 🐛 Bug Fixes
+
+- BitbucketDC: add event pull request opened [[#5048](https://github.com/woodpecker-ci/woodpecker/pull/5048)]
+- Fix exclude path constraint behavior [[#5042](https://github.com/woodpecker-ci/woodpecker/pull/5042)]
+- Use pointer cursor for icon buttons [[#5002](https://github.com/woodpecker-ci/woodpecker/pull/5002)]
+- Add back cursor-pointer to pipeline step list buttons [[#4982](https://github.com/woodpecker-ci/woodpecker/pull/4982)]
+
+### 📚 Documentation
+
+- chore(deps): lock file maintenance [[#5044](https://github.com/woodpecker-ci/woodpecker/pull/5044)]
+- chore(deps): lock file maintenance [[#5032](https://github.com/woodpecker-ci/woodpecker/pull/5032)]
+- Print at which file docs parsing failed [[#5040](https://github.com/woodpecker-ci/woodpecker/pull/5040)]
+- fix(deps): update dependency yaml to v2.7.1 [[#5029](https://github.com/woodpecker-ci/woodpecker/pull/5029)]
+- fix(deps): update docs npm deps non-major [[#5026](https://github.com/woodpecker-ci/woodpecker/pull/5026)]
+- Revert manual changes to changelog [[#5007](https://github.com/woodpecker-ci/woodpecker/pull/5007)]
+- Add missing docs for 3.x minor versions [[#4992](https://github.com/woodpecker-ci/woodpecker/pull/4992)]
+- chore(deps): lock file maintenance [[#5000](https://github.com/woodpecker-ci/woodpecker/pull/5000)]
+- fix(deps): update dependency redocusaurus to v2.2.2 [[#4998](https://github.com/woodpecker-ci/woodpecker/pull/4998)]
+- Add missing links to 3.x docs [[#4991](https://github.com/woodpecker-ci/woodpecker/pull/4991)]
+- chore(deps): update docs npm deps non-major [[#4987](https://github.com/woodpecker-ci/woodpecker/pull/4987)]
+- Rework secrets docs and document multiline secrets [[#4974](https://github.com/woodpecker-ci/woodpecker/pull/4974)]
+- Add documentation for WOODPECKER_EXPERT env vars [[#4972](https://github.com/woodpecker-ci/woodpecker/pull/4972)]
+
+### 📈 Enhancement
+
+- add nushell support to local backend [[#5043](https://github.com/woodpecker-ci/woodpecker/pull/5043)]
+- Style navbar login button as navbar-link [[#5033](https://github.com/woodpecker-ci/woodpecker/pull/5033)]
+- Use xorm quoter for feed query [[#5018](https://github.com/woodpecker-ci/woodpecker/pull/5018)]
+- Use badge value instead of label for single values [[#5010](https://github.com/woodpecker-ci/woodpecker/pull/5010)]
+- Add icons to all tabs [[#4421](https://github.com/woodpecker-ci/woodpecker/pull/4421)]
+- Tag pipeline with source information [[#4796](https://github.com/woodpecker-ci/woodpecker/pull/4796)]
+- Add titles and descriptions to repos page [[#4981](https://github.com/woodpecker-ci/woodpecker/pull/4981)]
+
+### 📦️ Dependency
+
+- fix(deps): update golang-packages [[#5046](https://github.com/woodpecker-ci/woodpecker/pull/5046)]
+- fix(deps): update module github.com/urfave/cli/v3 to v3.1.0 [[#5039](https://github.com/woodpecker-ci/woodpecker/pull/5039)]
+- chore(deps): update dependency vite to v6.2.4 [security] [[#5036](https://github.com/woodpecker-ci/woodpecker/pull/5036)]
+- fix(deps): update dependency simple-icons to v14.12.0 [[#5030](https://github.com/woodpecker-ci/woodpecker/pull/5030)]
+- chore(deps): update pre-commit hook golangci/golangci-lint to v2 [[#5028](https://github.com/woodpecker-ci/woodpecker/pull/5028)]
+- fix(deps): update web npm deps non-major [[#5027](https://github.com/woodpecker-ci/woodpecker/pull/5027)]
+- chore(deps): update docker.io/woodpeckerci/plugin-ready-release-go docker tag to v3.1.4 [[#5025](https://github.com/woodpecker-ci/woodpecker/pull/5025)]
+- fix(deps): update module golang.org/x/net to v0.38.0 [[#5024](https://github.com/woodpecker-ci/woodpecker/pull/5024)]
+- chore(deps): update woodpeckerci/plugin-git docker tag to v2.6.3 [[#5021](https://github.com/woodpecker-ci/woodpecker/pull/5021)]
+- chore(deps): update dependency vite to v6.2.3 [security] [[#5014](https://github.com/woodpecker-ci/woodpecker/pull/5014)]
+- fix(deps): update golang-packages [[#5012](https://github.com/woodpecker-ci/woodpecker/pull/5012)]
+- chore(deps): update docker.io/woodpeckerci/plugin-docker-buildx docker tag to v5.2.2 [[#4997](https://github.com/woodpecker-ci/woodpecker/pull/4997)]
+- fix(deps): update dependency simple-icons to v14.11.1 [[#4999](https://github.com/woodpecker-ci/woodpecker/pull/4999)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.37.0 [[#4996](https://github.com/woodpecker-ci/woodpecker/pull/4996)]
+- fix(deps): update module github.com/rs/zerolog to v1.34.0 [[#4995](https://github.com/woodpecker-ci/woodpecker/pull/4995)]
+- chore(deps): update dependency @antfu/eslint-config to v4.11.0 [[#4994](https://github.com/woodpecker-ci/woodpecker/pull/4994)]
+- chore(deps): update woodpeckerci/plugin-release docker tag to v0.2.5 [[#4993](https://github.com/woodpecker-ci/woodpecker/pull/4993)]
+- fix(deps): update module github.com/google/go-github/v69 to v70 [[#4990](https://github.com/woodpecker-ci/woodpecker/pull/4990)]
+- fix(deps): update web npm deps non-major [[#4989](https://github.com/woodpecker-ci/woodpecker/pull/4989)]
+- chore(deps): update pre-commit non-major [[#4988](https://github.com/woodpecker-ci/woodpecker/pull/4988)]
+- fix(deps): update module github.com/golang-jwt/jwt/v5 to v5.2.2 [security] [[#4986](https://github.com/woodpecker-ci/woodpecker/pull/4986)]
+- fix(deps): update module github.com/go-sql-driver/mysql to v1.9.1 [[#4985](https://github.com/woodpecker-ci/woodpecker/pull/4985)]
+- fix(deps): update module github.com/getkin/kin-openapi to v0.131.0 [[#4984](https://github.com/woodpecker-ci/woodpecker/pull/4984)]
+- fix(deps): update module github.com/expr-lang/expr to v1.17.1 [[#4983](https://github.com/woodpecker-ci/woodpecker/pull/4983)]
+- fix(deps): update module gitlab.com/gitlab-org/api/client-go to v0.126.0 [[#4976](https://github.com/woodpecker-ci/woodpecker/pull/4976)]
+
+### Misc
+
+- Bump golangci-lint to v2 [[#5034](https://github.com/woodpecker-ci/woodpecker/pull/5034)]
+- Update flake development environment [[#5022](https://github.com/woodpecker-ci/woodpecker/pull/5022)]
+
+## [3.4.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.4.0) - 2025-03-17
+
+### ❤️ Thanks to all contributors! ❤️
+
+@qwerty287, @xoxys
+
+### 📈 Enhancement
+
+- Remove woodpecker prefix from env var title in docs [[#4968](https://github.com/woodpecker-ci/woodpecker/pull/4968)]
+- Add backoff retry for store setup [[#4964](https://github.com/woodpecker-ci/woodpecker/pull/4964)]
+- Migrate repo output format to customizable output [[#4888](https://github.com/woodpecker-ci/woodpecker/pull/4888)]
+
+### 📚 Documentation
+
+- chore(deps): lock file maintenance [[#4970](https://github.com/woodpecker-ci/woodpecker/pull/4970)]
+- fix(deps): update docs npm deps non-major [[#4958](https://github.com/woodpecker-ci/woodpecker/pull/4958)]
+- Add global var note [[#4956](https://github.com/woodpecker-ci/woodpecker/pull/4956)]
+- chore(deps): lock file maintenance [[#4948](https://github.com/woodpecker-ci/woodpecker/pull/4948)]
+- chore(deps): update dependency @types/node to v22.13.10 [[#4944](https://github.com/woodpecker-ci/woodpecker/pull/4944)]
+- chore(deps): update dependency axios to v1.8.2 [security] [[#4941](https://github.com/woodpecker-ci/woodpecker/pull/4941)]
+- Fix dockerhub links in docs [[#4931](https://github.com/woodpecker-ci/woodpecker/pull/4931)]
+
+### 🐛 Bug Fixes
+
+- Fix fs owner in scratch-based container images [[#4961](https://github.com/woodpecker-ci/woodpecker/pull/4961)]
+
+### 📦️ Dependency
+
+- fix(deps): update module github.com/expr-lang/expr to v1.17.0 [[#4969](https://github.com/woodpecker-ci/woodpecker/pull/4969)]
+- fix(deps): update dependency simple-icons to v14.11.0 [[#4966](https://github.com/woodpecker-ci/woodpecker/pull/4966)]
+- fix(deps): update golang-packages [[#4963](https://github.com/woodpecker-ci/woodpecker/pull/4963)]
+- chore(deps): update pre-commit hook adrienverge/yamllint to v1.36.1 [[#4962](https://github.com/woodpecker-ci/woodpecker/pull/4962)]
+- fix(deps): update dependency @vueuse/core to v13 [[#4960](https://github.com/woodpecker-ci/woodpecker/pull/4960)]
+- fix(deps): update web npm deps non-major [[#4959](https://github.com/woodpecker-ci/woodpecker/pull/4959)]
+- chore(deps): update pre-commit non-major [[#4957](https://github.com/woodpecker-ci/woodpecker/pull/4957)]
+- fix(deps): update golang-packages to v0.32.3 [[#4953](https://github.com/woodpecker-ci/woodpecker/pull/4953)]
+- fix(deps): update dependency prismjs to v1.30.0 [security] [[#4951](https://github.com/woodpecker-ci/woodpecker/pull/4951)]
+- chore(deps): update dependency @intlify/eslint-plugin-vue-i18n to v4 [[#4943](https://github.com/woodpecker-ci/woodpecker/pull/4943)]
+- fix(deps): update module al.essio.dev/pkg/shellescape to v1.6.0 [[#4947](https://github.com/woodpecker-ci/woodpecker/pull/4947)]
+- fix(deps): update dependency simple-icons to v14.10.0 [[#4946](https://github.com/woodpecker-ci/woodpecker/pull/4946)]
+- chore(deps): update dependency @types/node to v22.13.10 [[#4945](https://github.com/woodpecker-ci/woodpecker/pull/4945)]
+- fix(deps): update web npm deps non-major [[#4942](https://github.com/woodpecker-ci/woodpecker/pull/4942)]
+- fix(deps): update dependency vue-i18n to v11.1.2 [security] [[#4940](https://github.com/woodpecker-ci/woodpecker/pull/4940)]
+- fix(deps): update golang-packages [[#4936](https://github.com/woodpecker-ci/woodpecker/pull/4936)]
+- chore(deps): lock file maintenance [[#4933](https://github.com/woodpecker-ci/woodpecker/pull/4933)]
+- fix(deps): update golang-packages [[#4929](https://github.com/woodpecker-ci/woodpecker/pull/4929)]
+
+## [3.3.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.3.0) - 2025-03-04
+
+### ❤️ Thanks to all contributors! ❤️
+
+@Levy-Tal, @qwerty287, @xoxys
+
+### 📚 Documentation
+
+- Refactor admin docs [[#4899](https://github.com/woodpecker-ci/woodpecker/pull/4899)]
+- chore(deps): lock file maintenance [[#4928](https://github.com/woodpecker-ci/woodpecker/pull/4928)]
+- chore(deps): update dependency @types/node to v22.13.9 [[#4925](https://github.com/woodpecker-ci/woodpecker/pull/4925)]
+- chore(deps): lock file maintenance [[#4922](https://github.com/woodpecker-ci/woodpecker/pull/4922)]
+- Add some blog posts [[#4921](https://github.com/woodpecker-ci/woodpecker/pull/4921)]
+- chore(deps): update dependency @types/node to v22.13.8 [[#4915](https://github.com/woodpecker-ci/woodpecker/pull/4915)]
+- Remove Slack plugin from examples [[#4914](https://github.com/woodpecker-ci/woodpecker/pull/4914)]
+- chore(deps): update docs npm deps non-major [[#4911](https://github.com/woodpecker-ci/woodpecker/pull/4911)]
+
+### 🐛 Bug Fixes
+
+- Add migration to fix zero forge_id in orgs table [[#4924](https://github.com/woodpecker-ci/woodpecker/pull/4924)]
+- Fix unique constraint for orgs [[#4923](https://github.com/woodpecker-ci/woodpecker/pull/4923)]
+
+### 📈 Enhancement
+
+- BitbucketDC: optimize repository search [[#4919](https://github.com/woodpecker-ci/woodpecker/pull/4919)]
+- Include forge type in netrc [[#4908](https://github.com/woodpecker-ci/woodpecker/pull/4908)]
+
+### 📦️ Dependency
+
+- chore(deps): update dependency @types/node to v22.13.9 [[#4926](https://github.com/woodpecker-ci/woodpecker/pull/4926)]
+- chore(deps): update pre-commit non-major [[#4927](https://github.com/woodpecker-ci/woodpecker/pull/4927)]
+- chore(deps): update dependency @antfu/eslint-config to v4.4.0 [[#4917](https://github.com/woodpecker-ci/woodpecker/pull/4917)]
+- fix(deps): update module gitlab.com/gitlab-org/api/client-go to v0.124.0 [[#4920](https://github.com/woodpecker-ci/woodpecker/pull/4920)]
+- chore(deps): update dependency @types/node to v22.13.8 [[#4916](https://github.com/woodpecker-ci/woodpecker/pull/4916)]
+- chore(deps): update dependency @types/lodash to v4.17.16 [[#4913](https://github.com/woodpecker-ci/woodpecker/pull/4913)]
+- chore(deps): update web npm deps non-major [[#4912](https://github.com/woodpecker-ci/woodpecker/pull/4912)]
+
+## [3.2.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.2.0) - 2025-02-26
+
+### ❤️ Thanks to all contributors! ❤️
+
+@DHandspikerWade, @anbraten, @arthurpro, @hhomar, @jenrik, @jpgleeson, @mark-pitblado, @maurerle, @qwerty287, @xoxys
+
+### 🔒 Security
+
+- Fix approval requirement if PR is closed [[#4902](https://github.com/woodpecker-ci/woodpecker/pull/4902)]
+
+### 📚 Documentation
+
+- chore(deps): lock file maintenance [[#4906](https://github.com/woodpecker-ci/woodpecker/pull/4906)]
+- chore(deps): update dependency axios to v1.8.1 [[#4905](https://github.com/woodpecker-ci/woodpecker/pull/4905)]
+- Fix typo on forgejo/gitea documentation [[#4898](https://github.com/woodpecker-ci/woodpecker/pull/4898)]
+- chore(deps): update docs npm deps non-major [[#4878](https://github.com/woodpecker-ci/woodpecker/pull/4878)]
+- plugins: add Hugo plugin for woodpecker [[#4870](https://github.com/woodpecker-ci/woodpecker/pull/4870)]
+- Add Microsoft Teams Notification (Advanced) plugin [[#4868](https://github.com/woodpecker-ci/woodpecker/pull/4868)]
+- chore(deps): update dependency @types/react to v19.0.9 [[#4864](https://github.com/woodpecker-ci/woodpecker/pull/4864)]
+- Drop versioned docs for v1 [[#4844](https://github.com/woodpecker-ci/woodpecker/pull/4844)]
+- Add a Home Assistant notification plugin  [[#4841](https://github.com/woodpecker-ci/woodpecker/pull/4841)]
+
+### 🐛 Bug Fixes
+
+- Use forge IDs for hook tokens [[#4897](https://github.com/woodpecker-ci/woodpecker/pull/4897)]
+- Fix nil dereference in Bitbucket webhook handling [[#4896](https://github.com/woodpecker-ci/woodpecker/pull/4896)]
+- Fix org assign on login [[#4817](https://github.com/woodpecker-ci/woodpecker/pull/4817)]
+- Directly fetch directory contents [[#4842](https://github.com/woodpecker-ci/woodpecker/pull/4842)]
+
+### 📈 Enhancement
+
+- Remove eslint types [[#4893](https://github.com/woodpecker-ci/woodpecker/pull/4893)]
+- Add default option for allowing pull requests on repositories [[#4873](https://github.com/woodpecker-ci/woodpecker/pull/4873)]
+- Replace deprecated linter [[#4843](https://github.com/woodpecker-ci/woodpecker/pull/4843)]
+
+### 📦️ Dependency
+
+- chore(deps): update woodpeckerci/plugin-git docker tag to v2.6.2 [[#4903](https://github.com/woodpecker-ci/woodpecker/pull/4903)]
+- fix(deps): update web npm deps non-major [[#4904](https://github.com/woodpecker-ci/woodpecker/pull/4904)]
+- fix(deps): update golang-packages [[#4900](https://github.com/woodpecker-ci/woodpecker/pull/4900)]
+- chore(deps): lock file maintenance [[#4895](https://github.com/woodpecker-ci/woodpecker/pull/4895)]
+- chore(deps): update dependency vue-tsc to v2.2.4 [[#4894](https://github.com/woodpecker-ci/woodpecker/pull/4894)]
+- fix(deps): update dependency simple-icons to v14.8.0 [[#4891](https://github.com/woodpecker-ci/woodpecker/pull/4891)]
+- fix(deps): update golang-packages [[#4890](https://github.com/woodpecker-ci/woodpecker/pull/4890)]
+- chore(deps): update dependency @types/eslint__js to v9 [[#4884](https://github.com/woodpecker-ci/woodpecker/pull/4884)]
+- chore(deps): update pre-commit hook rbubley/mirrors-prettier to v3.5.2 [[#4883](https://github.com/woodpecker-ci/woodpecker/pull/4883)]
+- fix(deps): update module codeberg.org/mvdkleijn/forgejo-sdk/forgejo to v2 [[#4858](https://github.com/woodpecker-ci/woodpecker/pull/4858)]
+- fix(deps): update web npm deps non-major [[#4882](https://github.com/woodpecker-ci/woodpecker/pull/4882)]
+- chore(deps): update postgres docker tag to v17.4 [[#4881](https://github.com/woodpecker-ci/woodpecker/pull/4881)]
+- chore(deps): update woodpeckerci/plugin-git docker tag to v2.6.1 [[#4879](https://github.com/woodpecker-ci/woodpecker/pull/4879)]
+- chore(deps): update docker.io/woodpeckerci/plugin-editorconfig-checker docker tag to v0.3.0 [[#4880](https://github.com/woodpecker-ci/woodpecker/pull/4880)]
+- chore(deps): update docker.io/woodpeckerci/plugin-surge-preview docker tag to v1.3.5 [[#4877](https://github.com/woodpecker-ci/woodpecker/pull/4877)]
+- fix(deps): update module github.com/prometheus/client_golang to v1.21.0 [[#4874](https://github.com/woodpecker-ci/woodpecker/pull/4874)]
+- fix(deps): update module github.com/go-sql-driver/mysql to v1.9.0 [[#4872](https://github.com/woodpecker-ci/woodpecker/pull/4872)]
+- fix(deps): update module github.com/google/go-github/v69 to v69.2.0 [[#4869](https://github.com/woodpecker-ci/woodpecker/pull/4869)]
+- chore(deps): lock file maintenance [[#4866](https://github.com/woodpecker-ci/woodpecker/pull/4866)]
+- chore(deps): update docker.io/woodpeckerci/plugin-trivy docker tag to v1.4.0 [[#4865](https://github.com/woodpecker-ci/woodpecker/pull/4865)]
+- fix(deps): update dependency simple-icons to v14.7.0 [[#4862](https://github.com/woodpecker-ci/woodpecker/pull/4862)]
+- fix(deps): update dependency pinia to v3 [[#4856](https://github.com/woodpecker-ci/woodpecker/pull/4856)]
+- fix(deps): update module gitlab.com/gitlab-org/api/client-go to v0.123.0 [[#4860](https://github.com/woodpecker-ci/woodpecker/pull/4860)]
+- chore(deps): update dependency vue-tsc to v2.2.2 [[#4859](https://github.com/woodpecker-ci/woodpecker/pull/4859)]
+- fix(deps): update web npm deps non-major [[#4857](https://github.com/woodpecker-ci/woodpecker/pull/4857)]
+- chore(deps): update pre-commit non-major [[#4855](https://github.com/woodpecker-ci/woodpecker/pull/4855)]
+- chore(deps): update postgres docker tag to v17.3 [[#4854](https://github.com/woodpecker-ci/woodpecker/pull/4854)]
+- chore(deps): update docker.io/techknowlogick/xgo docker tag to go-1.24.x [[#4853](https://github.com/woodpecker-ci/woodpecker/pull/4853)]
+- chore(deps): update docker.io/golang docker tag to v1.24 [[#4852](https://github.com/woodpecker-ci/woodpecker/pull/4852)]
+- chore(deps): update woodpeckerci/plugin-release docker tag to v0.2.4 [[#4851](https://github.com/woodpecker-ci/woodpecker/pull/4851)]
+- fix(deps): update dependency @tailwindcss/vite to v4.0.6 [[#4846](https://github.com/woodpecker-ci/woodpecker/pull/4846)]
+- chore(deps): lock file maintenance [[#4845](https://github.com/woodpecker-ci/woodpecker/pull/4845)]
+- fix(deps): update dependency tailwindcss to v4 [[#4778](https://github.com/woodpecker-ci/woodpecker/pull/4778)]
+- fix(deps): update golang-packages [[#4839](https://github.com/woodpecker-ci/woodpecker/pull/4839)]
+
+### Misc
+
+- kubernetes: create service for detached steps [[#4892](https://github.com/woodpecker-ci/woodpecker/pull/4892)]
+- docs: remove latest from docker compose example [[#4849](https://github.com/woodpecker-ci/woodpecker/pull/4849)]
+
 ## [3.1.0](https://github.com/woodpecker-ci/woodpecker/releases/tag/v3.1.0) - 2025-02-12
 
 ### ❤️ Thanks to all contributors! ❤️

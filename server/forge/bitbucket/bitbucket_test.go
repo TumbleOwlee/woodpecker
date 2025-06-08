@@ -17,7 +17,6 @@ package bitbucket
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -48,13 +47,14 @@ func TestBitbucket(t *testing.T) {
 	defer s.Close()
 	c := &config{url: s.URL, API: s.URL}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	forge, _ := New(&Opts{})
 	netrc, _ := forge.Netrc(fakeUser, fakeRepo)
 	assert.Equal(t, "bitbucket.org", netrc.Machine)
 	assert.Equal(t, "x-token-auth", netrc.Login)
 	assert.Equal(t, fakeUser.AccessToken, netrc.Password)
+	assert.Equal(t, model.ForgeTypeBitbucket, netrc.Type)
 
 	user, _, err := c.Login(ctx, &types.OAuthRequest{})
 	assert.NoError(t, err)

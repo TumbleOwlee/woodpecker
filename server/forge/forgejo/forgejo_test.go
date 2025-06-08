@@ -16,7 +16,6 @@ package forgejo
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,7 +52,7 @@ func Test_forgejo(t *testing.T) {
 	})
 
 	mockStore := mocks_store.NewStore(t)
-	ctx := store.InjectToContext(context.Background(), mockStore)
+	ctx := store.InjectToContext(t.Context(), mockStore)
 
 	t.Run("netrc with user token", func(t *testing.T) {
 		forge, _ := New(Opts{})
@@ -61,6 +60,7 @@ func Test_forgejo(t *testing.T) {
 		assert.Equal(t, "forgejo.org", netrc.Machine)
 		assert.Equal(t, fakeUser.Login, netrc.Login)
 		assert.Equal(t, fakeUser.AccessToken, netrc.Password)
+		assert.Equal(t, model.ForgeTypeForgejo, netrc.Type)
 	})
 	t.Run("netrc with machine account", func(t *testing.T) {
 		forge, _ := New(Opts{})

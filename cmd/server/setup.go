@@ -56,8 +56,8 @@ func setupStore(ctx context.Context, c *cli.Command) (store.Store, error) {
 	xorm := store.XORM{
 		Log:             c.Bool("db-log"),
 		ShowSQL:         c.Bool("db-log-sql"),
-		MaxOpenConns:    int(c.Int("db-max-open-connections")),
-		MaxIdleConns:    int(c.Int("db-max-idle-connections")),
+		MaxOpenConns:    c.Int("db-max-open-connections"),
+		MaxIdleConns:    c.Int("db-max-idle-connections"),
 		ConnMaxLifetime: c.Duration("db-max-connection-timeout"),
 	}
 
@@ -88,6 +88,10 @@ func setupStore(ctx context.Context, c *cli.Command) (store.Store, error) {
 	store, err := datastore.NewEngine(opts)
 	if err != nil {
 		return nil, fmt.Errorf("could not open datastore: %w", err)
+	}
+
+	if err = store.Ping(); err != nil {
+		return nil, err
 	}
 
 	if err := store.Migrate(ctx, c.Bool("migrations-allow-long")); err != nil {
@@ -188,8 +192,8 @@ func setupEvilGlobals(ctx context.Context, c *cli.Command, s store.Store) (err e
 		events = append(events, model.WebhookEvent(v))
 	}
 	server.Config.Pipeline.DefaultCancelPreviousPipelineEvents = events
-	server.Config.Pipeline.DefaultTimeout = c.Int("default-pipeline-timeout")
-	server.Config.Pipeline.MaxTimeout = c.Int("max-pipeline-timeout")
+	server.Config.Pipeline.DefaultTimeout = c.Int64("default-pipeline-timeout")
+	server.Config.Pipeline.MaxTimeout = c.Int64("max-pipeline-timeout")
 
 	_labels := c.StringSlice("default-workflow-labels")
 	labels := make(map[string]string, len(_labels))

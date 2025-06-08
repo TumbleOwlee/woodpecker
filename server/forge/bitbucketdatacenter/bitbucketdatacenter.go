@@ -163,7 +163,7 @@ func (c *client) Repo(ctx context.Context, u *model.User, rID model.ForgeRemoteI
 
 	var repo *bb.Repository
 	if rID.IsValid() {
-		opts := &bb.RepositorySearchOptions{Permission: bb.PermissionRepoWrite, ListOptions: bb.ListOptions{Limit: listLimit}}
+		opts := &bb.RepositorySearchOptions{Name: name, ProjectKey: owner, Permission: bb.PermissionRepoWrite, ListOptions: bb.ListOptions{Limit: listLimit}}
 		for {
 			repos, resp, err := bc.Projects.SearchRepositories(ctx, opts)
 			if err != nil {
@@ -259,7 +259,7 @@ func (c *client) File(ctx context.Context, u *model.User, r *model.Repo, p *mode
 
 	b, resp, err := bc.Projects.GetTextFileContent(ctx, r.Owner, r.Name, f, p.Commit)
 	if err != nil {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			// requested directory might not exist
 			return nil, &forge_types.ErrConfigNotFound{
 				Configs: []string{f},
@@ -281,7 +281,7 @@ func (c *client) Dir(ctx context.Context, u *model.User, r *model.Repo, p *model
 	for {
 		list, resp, err := bc.Projects.ListFiles(ctx, r.Owner, r.Name, path, opts)
 		if err != nil {
-			if resp.StatusCode == http.StatusNotFound {
+			if resp != nil && resp.StatusCode == http.StatusNotFound {
 				// requested directory might not exist
 				return nil, &forge_types.ErrConfigNotFound{
 					Configs: []string{path},
@@ -311,7 +311,7 @@ func (c *client) Status(ctx context.Context, u *model.User, repo *model.Repo, pi
 		return fmt.Errorf("unable to create bitbucket client: %w", err)
 	}
 	status := &bb.BuildStatus{
-		State:       convertStatus(pipeline.Status),
+		State:       convertStatus(workflow.State),
 		URL:         common.GetPipelineStatusURL(repo, pipeline, workflow),
 		Key:         common.GetPipelineStatusContext(repo, pipeline, workflow),
 		Description: common.GetPipelineStatusDescription(pipeline.Status),
@@ -331,6 +331,7 @@ func (c *client) Netrc(_ *model.User, r *model.Repo) (*model.Netrc, error) {
 		Login:    c.username,
 		Password: c.password,
 		Machine:  host,
+		Type:     model.ForgeTypeBitbucketDatacenter,
 	}, nil
 }
 
@@ -376,7 +377,7 @@ func (c *client) BranchHead(ctx context.Context, u *model.User, r *model.Repo, b
 		if branch.DisplayID == b {
 			return &model.Commit{
 				SHA:      branch.LatestCommit,
-				ForgeURL: fmt.Sprintf("%s/commits/%s", r.ForgeURL, branch.LatestCommit),
+				ForgeURL: fmt.Sprintf("%s/commits/%s", strings.TrimSuffix(r.ForgeURL, "/browse"), branch.LatestCommit),
 			}, nil
 		}
 	}
@@ -422,7 +423,7 @@ func (c *client) Activate(ctx context.Context, u *model.User, r *model.Repo, lin
 	webhook := &bb.Webhook{
 		Name:   "Woodpecker",
 		URL:    link,
-		Events: []bb.EventKey{bb.EventKeyRepoRefsChanged, bb.EventKeyPullRequestFrom, bb.EventKeyPullRequestMerged, bb.EventKeyPullRequestDeclined, bb.EventKeyPullRequestDeleted},
+		Events: []bb.EventKey{bb.EventKeyRepoRefsChanged, bb.EventKeyPullRequestFrom, bb.EventKeyPullRequestMerged, bb.EventKeyPullRequestDeclined, bb.EventKeyPullRequestDeleted, bb.EventKeyPullRequestOpened},
 		Active: true,
 		Config: &bb.WebhookConfiguration{
 			Secret: r.Hash,

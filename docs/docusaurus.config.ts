@@ -132,7 +132,7 @@ const config = {
             },
             {
               label: 'Administration',
-              to: '/docs/administration/getting-started',
+              to: '/docs/administration/general',
             },
             {
               to: '/migrations', // Always point to newest migration guide
@@ -164,6 +164,10 @@ const config = {
             {
               label: 'Mastodon',
               href: 'https://floss.social/@WoodpeckerCI',
+            },
+            {
+              label: 'Bluesky',
+              href: 'https://bsky.app/profile/woodpecker-ci.org',
             },
             {
               label: 'X',

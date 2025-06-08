@@ -22,15 +22,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/client"
+	json_message "github.com/docker/docker/pkg/jsonmessage"
+	std_copy "github.com/docker/docker/pkg/stdcopy"
 	tls_config "github.com/docker/go-connections/tlsconfig"
-	"github.com/moby/moby/client"
-	json_message "github.com/moby/moby/pkg/jsonmessage"
-	std_copy "github.com/moby/moby/pkg/stdcopy"
 	"github.com/moby/term"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
@@ -204,7 +205,7 @@ func (e *docker) StartStep(ctx context.Context, step *backend.Step, taskUUID str
 	hostConfig.Binds = utils.DeduplicateStrings(append(hostConfig.Binds, e.config.volumes...))
 
 	_, err = e.client.ContainerCreate(ctx, config, hostConfig, nil, nil, containerName)
-	if client.IsErrNotFound(err) {
+	if errdefs.IsNotFound(err) {
 		// automatically pull and try to re-create the image if the
 		// failure is caused because the image does not exist.
 		responseBody, pErr := e.client.ImagePull(ctx, config.Image, pullOpts)
