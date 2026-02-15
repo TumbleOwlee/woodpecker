@@ -11,9 +11,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font"
-
 	"go.woodpecker-ci.org/woodpecker/v3/server/badges/fonts"
 )
 
@@ -38,7 +35,6 @@ func (b bounds) Dx() float64 {
 }
 
 type badgeDrawer struct {
-	fd    *font.Drawer
 	tmpl  *template.Template
 	mutex *sync.Mutex
 }
@@ -74,8 +70,16 @@ func (d *badgeDrawer) RenderBytes(subject, status string, color Color) ([]byte, 
 const extraDx = 5
 
 func (d *badgeDrawer) measureString(s string) float64 {
+	width := 0
+	for _, r := range s {
+		if value, exists := fonts.GlyphWidths[r]; exists {
+			width += value
+		} else {
+			width += fonts.GlyphDefaultWidth
+		}
+	}
 	SHIFT := 6
-	return float64(d.fd.MeasureString(s)>>SHIFT) + extraDx
+	return float64(width>>SHIFT) + extraDx
 }
 
 // RenderBytes renders a badge of the given color, with given subject and status to bytes.
@@ -87,11 +91,6 @@ func RenderBytes(subject, status string, color Color) ([]byte, error) {
 	return drawer.RenderBytes(subject, status, color)
 }
 
-const (
-	dpi      = 72
-	fontSize = 11
-)
-
 var (
 	drawer    *badgeDrawer
 	initError error
@@ -100,31 +99,11 @@ var (
 
 func initDrawer() (*badgeDrawer, error) {
 	initOnce.Do(func() {
-		fd, err := mustNewFontDrawer(fontSize, dpi)
-		if err != nil {
-			initError = err
-			return
-		}
 		drawer = &badgeDrawer{
-			fd:    fd,
 			tmpl:  template.Must(template.New("flat-template").Parse(flatTemplate)),
 			mutex: &sync.Mutex{},
 		}
 		initError = nil
 	})
 	return drawer, initError
-}
-
-func mustNewFontDrawer(size, dpi float64) (*font.Drawer, error) {
-	ttf, err := truetype.Parse(fonts.DejaVuSans)
-	if err != nil {
-		return nil, err
-	}
-	return &font.Drawer{
-		Face: truetype.NewFace(ttf, &truetype.Options{
-			Size:    size,
-			DPI:     dpi,
-			Hinting: font.HintingFull,
-		}),
-	}, nil
 }
