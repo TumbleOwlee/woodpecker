@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package runtime
 
 import (
 	"context"
@@ -23,26 +23,15 @@ import (
 const shutdownTimeout = time.Second * 5
 
 var (
-	shutdownCtx       context.Context
-	shutdownCtxCancel context.CancelFunc
-	shutdownCtxLock   sync.Mutex
+	shutdownCtx     context.Context
+	shutdownCtxLock sync.Mutex
 )
 
 func GetShutdownCtx() context.Context {
 	shutdownCtxLock.Lock()
 	defer shutdownCtxLock.Unlock()
 	if shutdownCtx == nil {
-		shutdownCtx, shutdownCtxCancel = context.WithTimeout(context.Background(), shutdownTimeout)
+		shutdownCtx, _ = context.WithTimeout(context.Background(), shutdownTimeout) //nolint:govet
 	}
 	return shutdownCtx
-}
-
-func CancelShutdown() {
-	shutdownCtxLock.Lock()
-	defer shutdownCtxLock.Unlock()
-	if shutdownCtxCancel == nil {
-		// we create an canceled context
-		shutdownCtx, shutdownCtxCancel = context.WithCancel(context.Background()) //nolint:forbidigo
-	}
-	shutdownCtxCancel()
 }
